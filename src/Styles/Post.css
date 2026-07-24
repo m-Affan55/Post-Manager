@@ -48,7 +48,7 @@ body {
     font-size: 1rem;
 }
 
-.toggle-comments-btn {
+.toggle-comments-btn,.share-btn {
     background-color: transparent;
     color: #6b7280;
     border: 1px solid #d1d5db;
@@ -61,13 +61,13 @@ body {
     align-self: flex-start;
 }
 
-.toggle-comments-btn:hover {
+.toggle-comments-btn:hover,.share-btn:hover {
     background-color: #f9fafb;
     color: #374151;
     border-color: #9ca3af;
 }
 
-.toggle-comments-btn:focus {
+.toggle-comments-btn:focus,.share-btn:focus {
     outline: 2px solid #d1d5db;
     outline-offset: 2px;
 }
@@ -230,4 +230,8 @@ body {
     cursor: pointer;
     color: white;
     border: none;
+}
+.post-buttons{
+    display: flex;
+    justify-content: space-between;
 }

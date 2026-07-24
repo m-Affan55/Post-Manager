@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useContext, useState } from "react"
 import '../Styles/Post.css'
+import {FriendsContext} from "../Context/FriendsProvider.jsx"
 
 export default function Post() {
     const [addComments, setAddComments] = useState('')
@@ -10,6 +11,9 @@ export default function Post() {
         comments: [],
         showComments: false
     })
+    const {friends} = useContext(FriendsContext);
+    
+    const [shareIndex,setShareIndex] = useState(null)
 
     const [post, setPosts] = useState([{
         title: "Introduction to React", 
@@ -89,9 +93,25 @@ export default function Post() {
                 <div key={index} className="post-container">
                     <h1>{p.title}</h1>
                     <p>{p.content}</p>
+                    <div className="post-buttons">
+                    
                     <button className="toggle-comments-btn" onClick={() => handleShowComment(index)}>
                         {p.showComments ? "Hide Comments" : "Show Comments"}
                     </button>
+                    <button className="toggle-comments-btn" onClick={()=> setShareIndex(shareIndex === index ? null : index)}>Share</button>
+                    {shareIndex === index && (
+                        <div className="share-container-parent">
+                        <h1>Friends List</h1>
+                        {friends.map((f)=>(
+                            <div className="share-container">
+                            <p>{f}</p>
+                            <button>send</button>
+                            </div>
+                        ))}
+                        </div>
+                        )}
+
+                    </div>
                     {p.showComments && (
                         <div className="comment-section">
                             <div className="comment-input-group">

@@ -1,5 +1,5 @@
-Base_url = `https://localhost:3000/api/auth`;
-const getAuthToken=()=>{
+export const Base_url = `https://localhost:3000/api/auth`;
+export const getAuthToken=()=>{
     
     const token = localStorage.getItem("token");
     return {

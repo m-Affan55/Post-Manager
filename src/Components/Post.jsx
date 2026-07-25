@@ -1,7 +1,7 @@
 import { useContext, useState } from "react"
 import '../Styles/Post.css'
 import {FriendsContext} from "../Context/FriendsProvider.jsx"
-
+import {AiFillLike,AiOutlineLike} from 'react-icons/ai'
 export default function Post() {
     const [addComments, setAddComments] = useState('')
     const [ISAddActive,setIsAddActive] = useState(false)
@@ -19,13 +19,15 @@ export default function Post() {
         title: "Introduction to React", 
         content : "React is a declarative, efficient, and flexible JavaScript library for building user interfaces. It lets you compose complex UIs from small and isolated pieces of code called components.",
         comments : ["Great explanation!", "Helped me a lot, thanks."],
-        showComments : false
+        showComments : false,
+        likes: 0
     },
     {
         title: "Styling in React", 
         content : "There are many ways to style React components. You can use traditional CSS, CSS modules, CSS-in-JS libraries like styled-components, or utility-first frameworks like Tailwind CSS.",
         comments : ["I prefer Tailwind!", "CSS modules are my go-to."],
-        showComments : false
+        showComments : false,
+        likes: 0
     }]) 
     
     const handleAdd = (index) => {
@@ -72,6 +74,18 @@ export default function Post() {
       setIsAddActive(false)
 
     }
+    const handleLike = (index)=>
+    {
+        setPosts(post.map((p, i) =>
+            i === index ? { ...p,
+                likes: p.likes + 1
+            }
+            : p
+        ))
+    }
+    const handleUnLike = (index)=>{
+        setPosts(post.map((p,i)=>i == index ? {...p,likes: p.likes - 1} : p))
+    }
 
     return (
       <>
@@ -93,19 +107,25 @@ export default function Post() {
                 <div key={index} className="post-container">
                     <h1>{p.title}</h1>
                     <p>{p.content}</p>
+                    <div className="like-container">
+                        {p.likes ==0 ? <AiOutlineLike size={24} onClick={()=>handleLike(index)}/> : <AiFillLike size={24} onClick={()=>handleUnLike(index)}/>}
+                        <p>{p.likes}</p>
+                    </div>
                     <div className="post-buttons">
                     
                     <button className="toggle-comments-btn" onClick={() => handleShowComment(index)}>
                         {p.showComments ? "Hide Comments" : "Show Comments"}
                     </button>
-                    <button className="toggle-comments-btn" onClick={()=> setShareIndex(shareIndex === index ? null : index)}>Share</button>
+                    <button className={shareIndex === index ? "cancel-share-btn" : "share-btn"} onClick={()=> setShareIndex(shareIndex === index ? null : index
+                        
+                    )}>Share</button>
                     {shareIndex === index && (
                         <div className="share-container-parent">
                         <h1>Friends List</h1>
                         {friends.map((f)=>(
                             <div className="share-container">
                             <p>{f}</p>
-                            <button>send</button>
+                            <button onClick={()=>setShareIndex(null)}>send</button>
                             </div>
                         ))}
                         </div>

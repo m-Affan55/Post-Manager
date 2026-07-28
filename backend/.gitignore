@@ -1,6 +1,13 @@
+# env file
 venv/
-__pycache__/
 .env
+#cache files 
+__pycache__/
+# a testing file
 test.py
+# some json files
 Post_test.json
 post.json
+# Db files 
+*.db
+*.sqlite3

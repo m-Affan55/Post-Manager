@@ -5,7 +5,7 @@ from schemas import UserCreate, UserResponse , UserLogin
 from models import User
 from passlib.context import CryptContext
 from jose import jwt
-from routers.auth import SECRET_KEY
+from routers.auth import SECRET_KEY,ALGORITHM
 router = APIRouter(prefix="/users" ,tags=["Users"])
 
 
@@ -29,9 +29,9 @@ def login_user(user : UserLogin, db : Session =  Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     if(bycrypt_context.verify(user.password , current_user.password)):
         data = {
-            "sub" : current_user.id,
+            "sub" : str(current_user.id),
         }
-        token = jwt.encode(data, SECRET_KEY, algorithm="HS256")
+        token = jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
         return {
             "token": token,
             "token_type": "bearer"

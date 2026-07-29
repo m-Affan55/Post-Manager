@@ -1,4 +1,4 @@
-export const Base_url = `https://localhost:3000/api/auth`;
+export const Base_url = `http://localhost:8000/posts`;
 export const getAuthToken=()=>{
     
     const token = localStorage.getItem("token");
@@ -7,12 +7,31 @@ export const getAuthToken=()=>{
         'Authorization' : `Bearer ${token}`
     }
 }
+export async function GetAllUserPosts(){
+    try{
+        const response = await fetch(`${Base_url}`,{
+            method : 'GET',
+            headers : getAuthToken(),
+        });
+        if(!response.ok)
+        {
+            throw new Error("Error while getting Posts")
+        }
+        const data = await response.json();
+        return data;
+    }
+    catch(error)
+    {
+        console.error("Error in getting Posts",error);
+    }
+}
+
 export async function CreatePost(post){
     try{
-        const response = await fetch(`${Base_url}/create-post`,{
+        const response = await fetch(`${Base_url}`,{
             method : 'POST',
             headers : getAuthToken(),
-            body : JSON.stringify({post})
+            body : JSON.stringify(post)
         });
         if(!response.ok)
         {
@@ -70,7 +89,7 @@ export async function DeletePost(postId){
         {
             console.error("Error in deleting post",error);
         }      
-}
+    }
 
 export async function AddComment(comment){
     try{

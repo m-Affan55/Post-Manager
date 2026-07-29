@@ -17,6 +17,7 @@ class Post(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     title = Column(String , nullable=False)
     content = Column(String, nullable=False)
+    likes = Column(Integer, default = 0)
 
 class Comment(Base):
     __tablename__= "comments"

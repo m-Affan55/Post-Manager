@@ -2,6 +2,9 @@ import { useContext, useState } from "react"
 import '../Styles/Post.css'
 import {FriendsContext} from "../Context/FriendsProvider.jsx"
 import {AiFillLike,AiOutlineLike} from 'react-icons/ai'
+import {CreatePost, GetAllUserPosts} from '../Services/post.js'
+import { useEffect } from "react"
+
 export default function Post() {
     const [addComments, setAddComments] = useState('')
     const [ISAddActive,setIsAddActive] = useState(false)
@@ -9,26 +12,28 @@ export default function Post() {
         title: "",
         content: "",
         comments: [],
-        showComments: false
+        showComments: false,
+        likes: 0
     })
     const {friends} = useContext(FriendsContext);
     
     const [shareIndex,setShareIndex] = useState(null)
 
-    const [post, setPosts] = useState([{
-        title: "Introduction to React", 
-        content : "React is a declarative, efficient, and flexible JavaScript library for building user interfaces. It lets you compose complex UIs from small and isolated pieces of code called components.",
-        comments : ["Great explanation!", "Helped me a lot, thanks."],
-        showComments : false,
-        likes: 0
-    },
-    {
-        title: "Styling in React", 
-        content : "There are many ways to style React components. You can use traditional CSS, CSS modules, CSS-in-JS libraries like styled-components, or utility-first frameworks like Tailwind CSS.",
-        comments : ["I prefer Tailwind!", "CSS modules are my go-to."],
-        showComments : false,
-        likes: 0
-    }]) 
+    const [post, setPosts] = useState([]);
+    useEffect(()=>{
+        const getPosts = async ()=>
+            {
+                try{
+                    const res = await  GetAllUserPosts();
+                    console.log(res);
+                }
+                catch(error)
+                {
+                    console.error("Error in getting posts",error);
+                }
+        }
+        getPosts(); 
+    },[]) 
     
     const handleAdd = (index) => {
         if (!addComments.trim()) return;
@@ -61,14 +66,23 @@ export default function Post() {
     const handleChange = (e)=>{
       setAddPost({...addPost, [e.target.name]: e.target.value})
     }
-    const handleAddPost = ()=>{
+    const handleAddPost = async ()=>{
       if (!addPost.title.trim() || !addPost.content.trim())
         {
           alert("please add the all fields")
           return
         };
 
-      setPosts([...post, addPost])
+        try{
+            const addpostRes = await CreatePost(addPost);
+            console.log(addpostRes);
+            setPosts([...post, addpostRes])
+        }
+        catch(error)
+        {
+            console.error("Error in creating post",error);
+        }
+    
 
       setAddPost({ title: "", content: "", comments: [], showComments: false })
       setIsAddActive(false)

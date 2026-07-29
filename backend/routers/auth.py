@@ -6,6 +6,8 @@ from jose import jwt, JWTError
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
+print("SECRET_KEY:", SECRET_KEY)
+print("ALGORITHM:", ALGORITHM)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
 def get_current_user(token: str = Depends(oauth2_scheme)):

@@ -13,6 +13,7 @@ class UserLogin(BaseModel):
 class PostCreate(BaseModel):
     title: str
     content: str
+    likes: int
 
 class CommentCreate(BaseModel):
     post_id: int
@@ -27,6 +28,7 @@ class PostResponse(BaseModel):
     id: int
     title: str
     content: str
+    likes: int
 
 class CommentResponse(BaseModel):
     id: int

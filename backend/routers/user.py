@@ -5,6 +5,7 @@ from schemas import UserCreate, UserResponse , UserLogin
 from models import User
 from passlib.context import CryptContext
 from jose import jwt
+from auth import SECRET_KEY
 router = APIRouter(prefix="/users" ,tags=["Users"])
 
 
@@ -20,13 +21,20 @@ def create_user( user : UserCreate , db: Session = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
-@router.post("/login", response_model=UserResponse)
+@router.post("/login", response_model=dict)
 def login_user(user : UserLogin, db : Session =  Depends(get_db)):
     current_user = db.query(User).filter(user.email == User.email).first() 
     if current_user is None:
         raise HTTPException(status_code=404, detail="User not found")
     if(bycrypt_context.verify(user.password , current_user.password)):
-        return {"message" : "Login successful"}
-    return {"message" : "Invalid credentials"}
+        data = {
+            "sub" : current_user.id,
+        }
+        token = jwt.encode(data, SECRET_KEY, algorithm="HS256")
+        return {
+            "token": token,
+            "token_type": "bearer"
+        }
+    raise HTTPException(status_code=401, detail="Invalid password")
 
 

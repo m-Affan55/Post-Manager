@@ -6,6 +6,10 @@ class UserCreate(BaseModel):
     password: str
     email: EmailStr
 
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
 class PostCreate(BaseModel):
     title: str
     content: str

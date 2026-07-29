@@ -25,3 +25,4 @@ class Comment(Base):
     post_id = Column(Integer, ForeignKey("posts.id"))
     content = Column(String)
 
+

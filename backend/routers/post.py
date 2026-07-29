@@ -8,6 +8,8 @@ router = APIRouter(prefix="/users" ,tags=["Posts"])
 @router.get("/{user_id}/posts", response_model=list[PostResponse])
 def get_all_posts(user_id:int , db:Session = Depends(get_db)):
     posts = db.query(models.Post).filter(models.Post.user_id == user_id).all()
+    if posts is None:
+        raise HTTPException(status_code=404, detail="Posts not found")
     return posts
 
 @router.post("/{user_id}/posts", response_model=PostResponse)
@@ -37,4 +39,14 @@ def delete_post(user_id : int , post_id: int , db: Session = Depends(get_db)):
     db.delete(existing_post)
     db.commit()
     return {"message" : "Post deleted successfully"}
+
+@router.get("/{user_id}/posts/{post_id}", response_model = PostResponse)
+def get_post(user_id : int , post_id : int , db: Session = Depends(get_db)):
+    post = db.query(models.Post).filter(models.user_id == user_id ,  models.Post.id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return post
+
+
+
 

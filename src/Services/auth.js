@@ -1,4 +1,4 @@
-Base_Url = `https://localhost:3000/api/auth`;
+const Base_Url = `http://localhost:8000/users`;
 
 
 export async function Signup(name , email , password){
@@ -27,7 +27,7 @@ export async function Signup(name , email , password){
         }      
 }
 
-export async function Login(email , password){
+export async function loginUser(email , password){
     try{
         const response = await fetch(`${Base_Url}/login`,{
             method : "POST",

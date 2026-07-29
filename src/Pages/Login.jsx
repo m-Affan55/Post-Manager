@@ -1,12 +1,27 @@
 import {Link} from 'react-router-dom';
 import '../Styles/Auth.css';
+import { useState } from 'react';
+import { loginUser } from '../Services/auth.js';
+import { useNavigate } from 'react-router-dom';
 
 export default function Login(){
-    
-    function LoginHandler(e)
+    const navigate = useNavigate();
+    const [user , setUser] = useState({email:"",password:""});
+    async function LoginHandler(e)
     {
         e.preventDefault();
-        console.log("Login");
+        try{
+            const res = await loginUser(user.email , user.password);
+            console.log(res);
+            if(res)
+            {
+                navigate("/home");
+            }
+        }
+        catch(error)
+            {
+                console.error("Error in Login",error);
+            }
     }
     
     return(
@@ -14,8 +29,8 @@ export default function Login(){
             <div className="auth-card">
                 <h1>Login</h1>
                 <form onSubmit={LoginHandler} className="auth-form">
-                    <input type="email" placeholder="Email" required />
-                    <input type="password" placeholder="Password" required />
+                    <input type="email" placeholder="Email" required name="email" value={user.email} onChange={(e)=>setUser({...user , email : e.target.value})}/>
+                    <input type="password" placeholder="Password" required name="password" value={user.password} onChange={(e)=>setUser({...user , password : e.target.value})}/>
                     <button type="submit" className="auth-submit-btn">Login</button>
                 </form>
                 <div className="auth-footer">

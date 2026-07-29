@@ -11,6 +11,8 @@ def get_all_posts(current_user: int = Depends(get_current_user), db:Session = De
     posts = db.query(models.Post).filter(models.Post.user_id == current_user).all()
     if posts is None:
         raise HTTPException(status_code=404, detail="No posts found")
+    if not posts:
+        raise HTTPException(status_code=404, detail="No posts found")
     return posts
 
 @router.post("/", response_model=PostResponse)

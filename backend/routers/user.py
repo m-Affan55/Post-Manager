@@ -5,7 +5,7 @@ from schemas import UserCreate, UserResponse , UserLogin
 from models import User
 from passlib.context import CryptContext
 from jose import jwt
-from auth import SECRET_KEY
+from routers.auth import SECRET_KEY
 router = APIRouter(prefix="/users" ,tags=["Users"])
 
 
@@ -19,6 +19,7 @@ def create_user( user : UserCreate , db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    print(f"User created: {new_user.name} with email: {new_user.email}")
     return new_user
 
 @router.post("/login", response_model=dict)

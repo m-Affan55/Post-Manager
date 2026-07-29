@@ -2,7 +2,7 @@ import { useContext, useState } from "react"
 import '../Styles/Post.css'
 import {FriendsContext} from "../Context/FriendsProvider.jsx"
 import {AiFillLike,AiOutlineLike} from 'react-icons/ai'
-import {CreatePost, GetAllUserPosts, DeletePost} from '../Services/post.js'
+import {CreatePost, GetAllUserPosts, DeletePost, UpdatePost} from '../Services/post.js'
 import { useEffect } from "react"
 
 export default function Post() {
@@ -15,6 +15,9 @@ export default function Post() {
         showComments: false,
         likes: 0
     })
+    const [NoPost ,setNoPost] = useState(true);
+    const [editPostId, setEditPostId] = useState(null);
+    const [editPostData, setEditPostData] = useState({ title: "", content: "" });
     const {friends} = useContext(FriendsContext);
     
     const [shareIndex,setShareIndex] = useState(null)
@@ -24,9 +27,22 @@ export default function Post() {
         const getPosts = async ()=>
             {
                 try{
-                    const res = await  GetAllUserPosts();
-                    console.log(res);
-                    setPosts(res);
+                    const res = await GetAllUserPosts();
+                    if (res) {
+                        // Add frontend properties to each post from the database
+                        const formattedPosts = res.map(p => ({
+                            ...p,
+                            likes: 0,
+                            comments: [],
+                            showComments: false
+                        }));
+                        console.log(formattedPosts)
+                        setPosts(formattedPosts);
+                        if (formattedPosts.length > 0)
+                        {
+                            setNoPost(false);
+                        }
+                    }
                 }
                 catch(error)
                 {
@@ -77,7 +93,9 @@ export default function Post() {
         try{
             const addpostRes = await CreatePost(addPost);
             console.log(addpostRes);
-            setPosts([...post, addpostRes])
+            if (addpostRes) {
+                setPosts([...post, addpostRes])
+            }
         }
         catch(error)
         {
@@ -87,6 +105,7 @@ export default function Post() {
 
       setAddPost({ title: "", content: "", comments: [], showComments: false })
       setIsAddActive(false)
+      setNoPost(false);
 
     }
     const handleLike = (index)=>
@@ -112,6 +131,37 @@ export default function Post() {
         }
     }
 
+    const handleEditClick = (p) => {
+        setEditPostId(p.id);
+        setEditPostData({ title: p.title, content: p.content });
+    }
+
+    const handleEditChange = (e) => {
+        setEditPostData({ ...editPostData, [e.target.name]: e.target.value });
+    }
+
+    const handleSaveEdit = async (p) => {
+        
+        const updated_post = {
+            id: p.id,
+            title: editPostData.title,
+            content: editPostData.content
+        };
+        
+        try {
+            await UpdatePost(updated_post);
+            setPosts(post.map(postItem => 
+                postItem.id === p.id 
+                    ? { ...postItem, title: editPostData.title, content: editPostData.content } 
+                    : postItem
+            ));
+            setEditPostId(null);
+        }
+        catch(error) {
+            console.error("Error in updating post", error);
+        }   
+    }
+
     return (
       <>
       
@@ -127,18 +177,41 @@ export default function Post() {
       )}
       </div>
 
+      {NoPost && !ISAddActive &&(
+        <div className="no-post">
+            <h1>No Post Yet</h1>
+        </div>
+      )}
+
       { !ISAddActive && (
         <div className="post">
             {post.map((p, index) => (
                 <div key={index} className="post-container">
                     <div className="post-header">
-                        <h1>{p.title}</h1>
+                        {editPostId === p.id ? (
+                            <input type="text" name="title" value={editPostData.title} onChange={handleEditChange} className="edit-title-input" />
+                        ) : (
+                            <h1>{p.title}</h1>
+                        )}
                         <div className="post-header-buttons">
-                            <button className="update-post-btn">Update</button>
-                            <button className="delete-post-btn" onClick={()=>handleDelPost(p.id)}>Delete</button>
+                            {editPostId === p.id ? (
+                                <>
+                                    <button className="update-post-btn" onClick={() => handleSaveEdit(p)}>Save</button>
+                                    <button className="delete-post-btn" onClick={() => setEditPostId(null)}>Cancel</button>
+                                </>
+                            ) : (
+                                <>
+                                    <button className="update-post-btn" onClick={() => handleEditClick(p)}>Update</button>
+                                    <button className="delete-post-btn" onClick={()=>handleDelPost(p.id)}>Delete</button>
+                                </>
+                            )}
                         </div>
                     </div>
-                    <p>{p.content}</p>
+                    {editPostId === p.id ? (
+                        <textarea name="content" value={editPostData.content} onChange={handleEditChange} className="edit-content-input" rows={4} />
+                    ) : (
+                        <p>{p.content}</p>
+                    )}
                     <div className="like-container">
                         {p.likes ==0 ? <AiOutlineLike size={24} onClick={()=>handleLike(index)}/> : <AiFillLike size={24} onClick={()=>handleUnLike(index)}/>}
                         <p>{p.likes}</p>

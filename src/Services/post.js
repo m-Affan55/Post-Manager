@@ -49,10 +49,10 @@ export async function CreatePost(post){
 
 export async function UpdatePost(post){
     try{
-        const response = fetch(`${Base_url}/update-post`,{
+        const response = await fetch(`${Base_url}/${post.id}`,{
             method : 'PUT',
             headers : getAuthToken(),
-            body : JSON.stringify(post)
+            body : JSON.stringify({title : post.title , content : post.content})
         });
 
         if(!response.ok)

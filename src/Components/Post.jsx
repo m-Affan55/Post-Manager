@@ -2,7 +2,7 @@ import { useContext, useState } from "react"
 import '../Styles/Post.css'
 import {FriendsContext} from "../Context/FriendsProvider.jsx"
 import {AiFillLike,AiOutlineLike} from 'react-icons/ai'
-import {CreatePost, GetAllUserPosts} from '../Services/post.js'
+import {CreatePost, GetAllUserPosts, DeletePost} from '../Services/post.js'
 import { useEffect } from "react"
 
 export default function Post() {
@@ -26,6 +26,7 @@ export default function Post() {
                 try{
                     const res = await  GetAllUserPosts();
                     console.log(res);
+                    setPosts(res);
                 }
                 catch(error)
                 {
@@ -100,6 +101,16 @@ export default function Post() {
     const handleUnLike = (index)=>{
         setPosts(post.map((p,i)=>i == index ? {...p,likes: p.likes - 1} : p))
     }
+    const handleDelPost = async(id)=>{
+        try{
+            await DeletePost(id);
+            setPosts(post.filter((p)=>p.id !== id));
+        }
+        catch(error)
+        {
+            console.error("Error in deleting post",error);
+        }
+    }
 
     return (
       <>
@@ -120,7 +131,13 @@ export default function Post() {
         <div className="post">
             {post.map((p, index) => (
                 <div key={index} className="post-container">
-                    <h1>{p.title}</h1>
+                    <div className="post-header">
+                        <h1>{p.title}</h1>
+                        <div className="post-header-buttons">
+                            <button className="update-post-btn">Update</button>
+                            <button className="delete-post-btn" onClick={()=>handleDelPost(p.id)}>Delete</button>
+                        </div>
+                    </div>
                     <p>{p.content}</p>
                     <div className="like-container">
                         {p.likes ==0 ? <AiOutlineLike size={24} onClick={()=>handleLike(index)}/> : <AiFillLike size={24} onClick={()=>handleUnLike(index)}/>}
@@ -134,6 +151,7 @@ export default function Post() {
                     <button className={shareIndex === index ? "cancel-share-btn" : "share-btn"} onClick={()=> setShareIndex(shareIndex === index ? null : index
                         
                     )}>Share</button>
+                    
                     {shareIndex === index && (
                         <div className="share-container-parent">
                         <h1>Friends List</h1>
@@ -164,7 +182,7 @@ export default function Post() {
                                 {p.comments.map((c, cIndex) => (
                                     <div key={cIndex} className="comment-wrapper">
                                         <p className="comment">{c}</p>
-                                        <button className="delete-comment-btn" onClick={() => handleDel(index)}>Delete</button>
+                                        <button className="delete-comment-btn" onClick={() => handleDel(p.id)}>Delete</button>
                                     </div>
                                 ))}
                             </div>

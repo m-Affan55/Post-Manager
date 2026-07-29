@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends , HTTPException
+from fastapi import APIRouter, Depends , HTTPException, Response, status
 from dependencies import get_db
 from sqlalchemy.orm import Session
 from schemas import PostResponse, PostCreate
@@ -41,7 +41,7 @@ def delete_post( post_id: int ,current_user : int = Depends(get_current_user), d
         raise HTTPException(status_code=404, detail="Post not found")
     db.delete(existing_post)
     db.commit()
-    return {"message" : "Post deleted successfully"}
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @router.get("/{post_id}", response_model = PostResponse)
 def get_post(post_id : int ,current_user: int = Depends(get_current_user), db: Session = Depends(get_db)):

@@ -289,3 +289,51 @@ body {
 .like-container svg:hover {
     transform: scale(1.1);
 }
+
+.post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.post-header h1 {
+    margin: 0 !important;
+}
+
+.post-header-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.update-post-btn {
+    background-color: transparent;
+    color: #3b82f6;
+    border: 1px solid #3b82f6;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.update-post-btn:hover {
+    background-color: #eff6ff;
+}
+
+.delete-post-btn {
+    background-color: transparent;
+    color: #ef4444;
+    border: 1px solid #ef4444;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.delete-post-btn:hover {
+    background-color: #fef2f2;
+}

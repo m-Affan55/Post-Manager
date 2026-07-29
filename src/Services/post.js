@@ -71,7 +71,7 @@ export async function UpdatePost(post){
 
 export async function DeletePost(postId){
     try{
-        const response = fetch(`${Base_url}/delete-post`,{
+        const response = await fetch(`${Base_url}/${postId}`,{
             method : 'DELETE',
             headers : getAuthToken(),
             body : JSON.stringify(postId)
@@ -81,8 +81,11 @@ export async function DeletePost(postId){
         {
             throw new Error("Error in deleting post") 
         }
-        const data = await response.json();
-        return data;
+        if (response.status == 204)
+        {
+            return true;
+        }
+        return await response.json();
         
     }
     catch(error)

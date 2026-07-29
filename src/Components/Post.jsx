@@ -170,7 +170,6 @@ export default function Post() {
         <button className={!ISAddActive ? "add-post-btn" : "cancel-btn"} onClick={()=>setIsAddActive(!ISAddActive)}>{!ISAddActive ? "Add Post" : "Cancel"}</button>
         { ISAddActive && (<div className="add-container">
             <input type="text" placeholder="Title" name="title" value={addPost.title} onChange={handleChange}></input>
-            {/* <input type="text" placeholder="Content" name="content" value={addPost.content} onChange={handleChange}></input> */}
             <textarea placeholder="Content" rows={6} name="content" value={addPost.content} onChange={handleChange}></textarea>
             <button onClick={handleAddPost}>Post</button>
         </div>

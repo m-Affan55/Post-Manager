@@ -15,7 +15,6 @@ class PostCreate(BaseModel):
     content: str
 
 class CommentCreate(BaseModel):
-    post_id: int
     content: str
 
 class UserResponse(BaseModel):
@@ -33,3 +32,6 @@ class CommentResponse(BaseModel):
     id: int
     content: str
     post_id: int
+
+class CommentUpdate(BaseModel):
+    content: str

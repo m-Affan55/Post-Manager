@@ -27,3 +27,9 @@ class Comment(Base):
     content = Column(String)
 
 
+class Friendship(Base):
+    __tablename__ = "friendships"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    friend_id = Column(Integer, ForeignKey("users.id"))
+    status = Column(String, default="pending")

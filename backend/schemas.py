@@ -35,3 +35,9 @@ class CommentResponse(BaseModel):
 
 class CommentUpdate(BaseModel):
     content: str
+
+class FriendRequestResponse(BaseModel):
+    id: int
+    user_id: int
+    friend_id: int
+    status: str

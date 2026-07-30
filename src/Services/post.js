@@ -94,24 +94,3 @@ export async function DeletePost(postId){
         }      
     }
 
-export async function AddComment(comment){
-    try{
-        const response = fetch(`${Base_url}/add-comment`,{
-            method : 'POST',
-            headers : getAuthToken(),
-            body : JSON.stringify(comment)
-        });
-
-        if(!response.ok)
-        {
-            throw new Error("Error in adding comment") 
-        }
-        const data = await response.json();
-        return data;
-        
-    }
-    catch(error)
-        {
-            console.error("Error in adding comment",error);
-        }      
-}

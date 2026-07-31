@@ -22,16 +22,21 @@ class UserResponse(BaseModel):
     name: str
     email: EmailStr
 
+class CommentResponse(BaseModel):
+    id: int
+    content: str
+    post_id: int
+    class Config:
+        from_attributes = True
+
 class PostResponse(BaseModel):
     id: int
     title: str
     content: str
     likes: int
-
-class CommentResponse(BaseModel):
-    id: int
-    content: str
-    post_id: int
+    comments: list[CommentResponse] = []
+    class Config:
+        from_attributes = True
 
 class CommentUpdate(BaseModel):
     content: str

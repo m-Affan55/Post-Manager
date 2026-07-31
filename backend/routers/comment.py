@@ -1,5 +1,4 @@
-from sys import prefix
-from django import db
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from dependencies import get_db
 from sqlalchemy.orm import Session
@@ -12,7 +11,7 @@ def get_comments(post_id: int , db:Session = Depends(get_db)):
     comments = db.query(Comment).filter(Comment.post_id == post_id).all()
     return comments
 
-@router.post("/{post_id}", Response_model=CommentResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/{post_id}", response_model=CommentResponse, status_code=status.HTTP_201_CREATED)
 def add_comment(comment: CommentCreate,post_id: int , current_user: int = Depends(get_current_user),db:Session = Depends(get_db)):
     post = db.query(Post).filter(Post.id == post_id).first()
     if not post: 

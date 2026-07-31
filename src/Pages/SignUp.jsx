@@ -1,9 +1,10 @@
-import {Link } from 'react-router-dom';
+import {Link,useNavigate } from 'react-router-dom';
 import '../Styles/Auth.css';
 import { useState } from 'react';
 import {Signup} from '../Services/auth.js';
 export default function SignUp(){
 
+    const navigate = useNavigate();
 
     const [userData , setUserData] = useState({name:"" , email : "" , password : "" , confirmPassword : ""});
     async function SignUpHandler(e)
@@ -18,6 +19,7 @@ export default function SignUp(){
             if (result) {
                 alert("Signup successful");
             }
+            navigate('/')
         }
         catch(error)
         {

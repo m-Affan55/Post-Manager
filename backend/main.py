@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from db import engine
 from models import Base
-from routers import post , user
+from routers import post, user, comment
 from fastapi.middleware.cors import CORSMiddleware
 
 Base.metadata.create_all(bind=engine)
@@ -16,6 +16,7 @@ app.add_middleware(
 )
 app.include_router(user.router)
 app.include_router(post.router)
+app.include_router(comment.router)
 
 @app.get('/')
 def root():

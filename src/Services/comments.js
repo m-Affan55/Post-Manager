@@ -1,15 +1,18 @@
 const Base_url = "http://localhost:8000/comments";
-const getAuthToken=()=>{
+
+export const getAuthToken=()=>{
+    
     const token = localStorage.getItem("token");
     return {
         'Content-Type' : 'application/json',
-        'Authorization  ' : `Bearer ${token}`
+        'Authorization' : `Bearer ${token}`
     }
 }
 
+
 export async function AddComment(comment){
     try{
-        const response = fetch(`${Base_url}`,{
+        const response = await fetch(`${Base_url}/${comment.post_id}`,{
             method : 'POST',
             headers : getAuthToken(),
             body : JSON.stringify(comment)
@@ -24,30 +27,12 @@ export async function AddComment(comment){
         
     }
     catch(error)
-        {
-            console.error("Error in adding comment",error);
-        }      
-}
-
-
-export async function GetAllComments(post_id){
-    try{
-        const response = await fetch(`${Base_url}/${post_id}`,{
-            method : 'GET',
-            headers : getAuthToken(),
-        });
-        if(!response.ok)
-        {
-            throw new Error("Error while getting Comments")
-        }
-        const data = await response.json();
-        return data;
-    }
-    catch(error)
     {
-        console.error("Error in getting Comments",error);
-    }
+        console.error("Error in adding comment",error);
+        throw error;
+    }      
 }
+
 
 export async function UpdateComment(comment){
     try{

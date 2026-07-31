@@ -1,6 +1,6 @@
 # here we define our models
 from sqlalchemy import Column, Integer, String,ForeignKey
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase,relationship
 class Base(DeclarativeBase):
     pass
 
@@ -18,6 +18,7 @@ class Post(Base):
     title = Column(String , nullable=False)
     content = Column(String, nullable=False)
     likes = Column(Integer, default = 0)
+    comments = relationship("Comment", back_populates="post")
 
 class Comment(Base):
     __tablename__= "comments"
@@ -25,6 +26,7 @@ class Comment(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     post_id = Column(Integer, ForeignKey("posts.id"))
     content = Column(String)
+    post = relationship("Post", back_populates="comments")
 
 
 class Friendship(Base):

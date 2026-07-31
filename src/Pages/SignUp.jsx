@@ -14,6 +14,12 @@ export default function SignUp(){
         {
             return alert("Password and Confirm Password do not match");
         }
+        if(userData.password.length < 8) {
+            return alert("Password must be at least 8 characters long");
+        }
+        if(!/[A-Z]/.test(userData.password) || !/[a-z]/.test(userData.password) || !/[0-9]/.test(userData.password)) {
+            return alert("Password must contain at least one uppercase letter, one lowercase letter, and one number");
+        }
         try{
             const result = await Signup(userData.name , userData.email , userData.password);
             if (result) {
@@ -24,6 +30,7 @@ export default function SignUp(){
         catch(error)
         {
             console.error("Error in signup",error);
+            alert(error.message);
         }
         
     }

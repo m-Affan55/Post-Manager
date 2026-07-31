@@ -2,11 +2,14 @@ import { useContext, useState } from "react"
 import '../Styles/Post.css'
 import { FriendsContext } from "../Context/FriendsProvider.jsx"
 import { AiFillLike, AiOutlineLike } from 'react-icons/ai'
+import { IoMdArrowBack } from 'react-icons/io'
+import { useLocation } from 'react-router-dom'
 import { CreatePost, GetAllUserPosts, DeletePost, UpdatePost, LikePost, UnlikePost } from '../Services/post.js'
 import { useEffect } from "react"
 import { AddComment, UpdateComment, DeleteComment } from '../Services/comments.js'
 import { getUserName } from '../Services/auth.js'
 export default function Post() {
+    const location = useLocation();
     const [addComments, setAddComments] = useState('')
     const [ISAddActive, setIsAddActive] = useState(false)
     const [addPost, setAddPost] = useState({
@@ -32,6 +35,11 @@ export default function Post() {
     const [post, setPosts] = useState([]);
 
     const [username, setusername] = useState("");
+
+    // Reset add post state when clicking Home in navbar
+    useEffect(() => {
+        setIsAddActive(false);
+    }, [location.key]);
 
     useEffect(()=>{
         const UserName = async () => {
@@ -236,7 +244,9 @@ export default function Post() {
 
             <div className="add-post-container-parent">
 
-                <button className={!ISAddActive ? "add-post-btn" : "cancel-btn"} onClick={() => setIsAddActive(!ISAddActive)}>{!ISAddActive ? "Add Post" : "Cancel"}</button>
+                <button className={!ISAddActive ? "add-post-btn" : "cancel-btn"} onClick={() => setIsAddActive(!ISAddActive)}>
+                    {!ISAddActive ? "Add Post" : <span style={{display: 'flex', alignItems: 'center', gap: '5px'}}><IoMdArrowBack /> Back</span>}
+                </button>
                 {ISAddActive && (<div className="add-container">
                     <input type="text" placeholder="Title" name="title" value={addPost.title} onChange={handleChange}></input>
                     <textarea placeholder="Content" rows={6} name="content" value={addPost.content} onChange={handleChange}></textarea>

@@ -23,9 +23,10 @@ export default function Login(){
             }
         }
         catch(error)
-            {
-                console.error("Error in Login",error);
-            }
+        {
+            console.error("Error in Login",error);
+            alert(error.message);
+        }
     }
     
     return(

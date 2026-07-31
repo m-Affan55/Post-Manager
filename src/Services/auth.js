@@ -15,7 +15,8 @@ export async function Signup(name , email , password){
         );
         if(!response.ok)
         {
-            throw new Error("Error in signup") 
+            const errData = await response.json();
+            throw new Error(errData.detail || "Error in signup");
         }
         const data = await response.json();
         return data;
@@ -24,6 +25,7 @@ export async function Signup(name , email , password){
     catch(error)
         {
             console.error("Error in signup",error);
+            throw error;
         }      
 }
 
@@ -38,7 +40,8 @@ export async function loginUser(email , password){
         });
         if(!response.ok)
         {
-            throw new Error("Error in Login") 
+            const errData = await response.json();
+            throw new Error(errData.detail || "Error in Login");
         }
         const data = await response.json();
         localStorage.setItem("token",data.token);
@@ -48,6 +51,7 @@ export async function loginUser(email , password){
     catch(error)
         {
             console.error("Error in Login",error);
+            throw error;
         }      
 }
 export async function getUserName(){

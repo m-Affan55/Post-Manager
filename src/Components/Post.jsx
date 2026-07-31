@@ -2,6 +2,7 @@ import { useContext, useState } from "react"
 import '../Styles/Post.css'
 import { FriendsContext } from "../Context/FriendsProvider.jsx"
 import { AiFillLike, AiOutlineLike } from 'react-icons/ai'
+import { FiEdit2, FiTrash2, FiMessageCircle, FiShare } from 'react-icons/fi'
 import { IoMdArrowBack } from 'react-icons/io'
 import { useLocation } from 'react-router-dom'
 import { CreatePost, GetAllUserPosts, DeletePost, UpdatePost, LikePost, UnlikePost } from '../Services/post.js'
@@ -288,8 +289,8 @@ export default function Post() {
                                         </>
                                     ) : (
                                         <>
-                                            <button className="update-post-btn" onClick={() => handleEditClick(p)}>Update</button>
-                                            <button className="delete-post-btn" onClick={() => handleDelPost(p.id)}>Delete</button>
+                                            <button className="update-post-btn" onClick={() => handleEditClick(p)}><FiEdit2 /> Update</button>
+                                            <button className="delete-post-btn" onClick={() => handleDelPost(p.id)}><FiTrash2 /> Delete</button>
                                         </>
                                     )}
                                 </div>
@@ -310,11 +311,11 @@ export default function Post() {
                             <div className="post-buttons">
 
                                 <button className="toggle-comments-btn" onClick={() => handleShowComment(index)}>
-                                    {p.showComments ? "Hide Comments" : "Show Comments"}
+                                    <FiMessageCircle /> {p.showComments ? "Hide Comments" : "Show Comments"}
                                 </button>
-                                <button className={shareIndex === index ? "cancel-share-btn" : "share-btn"} onClick={() => setShareIndex(shareIndex === index ? null : index
-
-                                )}>Share</button>
+                                <button className={shareIndex === index ? "cancel-share-btn" : "share-btn"} onClick={() => setShareIndex(shareIndex === index ? null : index)}>
+                                    <FiShare /> Share
+                                </button>
 
                                 {shareIndex === index && (
                                     <div className="share-container-parent">
@@ -361,11 +362,11 @@ export default function Post() {
                                                     </div>
                                                 ) : (
                                                     <>
-                                                        <p className="comment"><strong>{c.user ? c.user.name : "Unknown"}</strong>: {c.content}</p>
+                                                        <p className="comment"><strong>{c.user ? c.user.name : "Unknown"}</strong>{c.content}</p>
                                                         {c.user && c.user.id === currentUserId && (
-                                                            <div style={{display: 'flex', gap: '10px', fontSize: '12px', marginLeft: 'auto'}}>
-                                                                <button onClick={() => { setEditCommentId(c.id); setEditCommentContent(c.content); }} style={{background: 'none', color: '#007bff', border: 'none', padding: 0}}>Edit</button>
-                                                                <button onClick={() => handleDel(index, c.id)} style={{background: 'none', color: 'red', border: 'none', padding: 0}}>Delete</button>
+                                                            <div style={{display: 'flex', gap: '12px', marginTop: '6px', paddingLeft: '4px'}}>
+                                                                <button onClick={() => { setEditCommentId(c.id); setEditCommentContent(c.content); }} style={{background: 'none', color: 'var(--text-muted)', border: 'none', padding: 0, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px'}}><FiEdit2 /> Edit</button>
+                                                                <button onClick={() => handleDel(index, c.id)} style={{background: 'none', color: 'var(--destructive)', border: 'none', padding: 0, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px'}}><FiTrash2 /> Delete</button>
                                                             </div>
                                                         )}
                                                     </>

@@ -19,9 +19,9 @@ export default function Navbar() {
         <nav className="navbar">
             <div className="navbar-logo">PostApp</div>
             <div className="navbar-links">
-                <Link to="/home" className="nav-btn">Home</Link>
-                <Link to="/feed" className="nav-btn">Feed</Link>
-                <Link to="/friends" className="nav-btn">Friends</Link>
+                <Link to="/home" className={`nav-btn ${location.pathname === '/home' ? 'active' : ''}`}>Home</Link>
+                <Link to="/feed" className={`nav-btn ${location.pathname === '/feed' ? 'active' : ''}`}>Feed</Link>
+                <Link to="/friends" className={`nav-btn ${location.pathname === '/friends' ? 'active' : ''}`}>Friends</Link>
                 <button onClick={handleLogout} className="nav-btn">Logout</button>
             </div>
         </nav>

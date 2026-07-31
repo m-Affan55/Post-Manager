@@ -48,3 +48,7 @@ class FriendRequestResponse(BaseModel):
     user_id: int
     friend_id: int
     status: str
+    requester: UserResponse
+    addressee: UserResponse
+    class Config:
+        from_attributes = True

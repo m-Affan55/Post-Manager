@@ -41,3 +41,5 @@ class Friendship(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     friend_id = Column(Integer, ForeignKey("users.id"))
     status = Column(String, default="pending")
+    requester = relationship("User", foreign_keys=[user_id])
+    addressee = relationship("User", foreign_keys=[friend_id])

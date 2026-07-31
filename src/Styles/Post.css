@@ -401,3 +401,23 @@ body {
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
+.user-greeting {
+    width: 100%;
+    max-width: 540px;
+    margin: 20px auto 5px;
+    text-align: center;
+    padding: 10px;
+}
+
+.user-greeting h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+.user-post-header{
+    width: 100%;
+    max-width: 540px;
+    margin: 5px auto 5px;
+    text-align: center;
+    padding: 15px;
+}

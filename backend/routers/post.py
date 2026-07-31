@@ -11,6 +11,13 @@ def get_all_posts(current_user: int = Depends(get_current_user), db:Session = De
     posts = db.query(models.Post).filter(models.Post.user_id == current_user).all()
     return posts
 
+@router.get("/feed", response_model=list[PostResponse])
+def get_feed_posts(current_user: int = Depends(get_current_user), db:Session = Depends(get_db)):
+    posts = db.query(models.Post).all()
+    # Sort posts by engagement: likes + number of comments
+    posts.sort(key=lambda p: (p.likes or 0) + len(p.comments), reverse=True)
+    return posts
+
 @router.post("/", response_model=PostResponse)
 def create_post(post : PostCreate, current_user: int = Depends(get_current_user), db:Session = Depends(get_db)):
     new_Post = models.Post(title=post.title, content=post.content, user_id=current_user)

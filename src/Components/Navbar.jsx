@@ -20,6 +20,7 @@ export default function Navbar() {
             <div className="navbar-logo">PostApp</div>
             <div className="navbar-links">
                 <Link to="/home" className="nav-btn">Home</Link>
+                <Link to="/feed" className="nav-btn">Feed</Link>
                 <Link to="/friends" className="nav-btn">Friends</Link>
                 <button onClick={handleLogout} className="nav-btn">Logout</button>
             </div>

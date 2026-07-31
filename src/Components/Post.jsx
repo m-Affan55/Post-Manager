@@ -5,7 +5,7 @@ import { AiFillLike, AiOutlineLike } from 'react-icons/ai'
 import { CreatePost, GetAllUserPosts, DeletePost, UpdatePost } from '../Services/post.js'
 import { useEffect } from "react"
 import { AddComment, UpdateComment, DeleteComment } from '../Services/comments.js'
-
+import { getUserName } from '../Services/auth.js'
 export default function Post() {
     const [addComments, setAddComments] = useState('')
     const [ISAddActive, setIsAddActive] = useState(false)
@@ -24,6 +24,23 @@ export default function Post() {
     const [shareIndex, setShareIndex] = useState(null)
 
     const [post, setPosts] = useState([]);
+
+    const [username, setusername] = useState("");
+
+    useEffect(()=>{
+        const UserName = async () => {
+            try {
+                const res = await getUserName();
+                if (res) {
+                    setusername(res.name);
+                }
+            }
+            catch (error) {
+                console.error("Error in getting user name", error);
+            }
+        }
+        UserName();
+    },[])
     useEffect(() => {
         const getPosts = async () => {
             try {
@@ -183,11 +200,18 @@ export default function Post() {
                 )}
             </div>
 
+            <div className="user-greeting">
+                <h1>Hey! {username}</h1>
+            </div>
+                <div className="user-post-header">
+                <h1>Your Posts</h1>
+            </div>
             {NoPost && !ISAddActive && (
                 <div className="no-post">
                     <h1>No Post Yet</h1>
                 </div>
             )}
+            
 
             {!ISAddActive && (
                 <div className="post">

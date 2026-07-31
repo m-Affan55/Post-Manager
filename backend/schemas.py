@@ -26,6 +26,7 @@ class CommentResponse(BaseModel):
     id: int
     content: str
     post_id: int
+    user: UserResponse
     class Config:
         from_attributes = True
 
@@ -34,6 +35,7 @@ class PostResponse(BaseModel):
     title: str
     content: str
     likes: int
+    user: UserResponse
     comments: list[CommentResponse] = []
     class Config:
         from_attributes = True

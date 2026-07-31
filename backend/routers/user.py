@@ -6,6 +6,7 @@ from models import User
 from passlib.context import CryptContext
 from jose import jwt
 from routers.auth import SECRET_KEY,ALGORITHM
+from routers.auth import get_current_user
 router = APIRouter(prefix="/users" ,tags=["Users"])
 
 
@@ -38,4 +39,10 @@ def login_user(user : UserLogin, db : Session =  Depends(get_db)):
         }
     raise HTTPException(status_code=401, detail="Invalid password")
 
-
+# user name 
+@router.get("/me", response_model=UserResponse)
+def get_me(current_user: int = Depends(get_current_user), db:Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == current_user).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user

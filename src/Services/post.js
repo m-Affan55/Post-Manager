@@ -26,6 +26,25 @@ export async function GetAllUserPosts(){
     }
 }
 
+export async function GetAllFeedPosts(){
+    try{
+        const response = await fetch(`${Base_url}/feed`,{
+            method : 'GET',
+            headers : getAuthToken(),
+        });
+        if(!response.ok)
+        {
+            throw new Error("Error while getting Feed Posts")
+        }
+        const data = await response.json();
+        return data;
+    }
+    catch(error)
+    {
+        console.error("Error in getting Feed Posts",error);
+    }
+}
+
 export async function CreatePost(post){
     try{
         const response = await fetch(`${Base_url}`,{

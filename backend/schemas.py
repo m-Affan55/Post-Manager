@@ -30,11 +30,18 @@ class CommentResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class LikeResponse(BaseModel):
+    id: int
+    user_id: int
+    post_id: int
+    class Config:
+        from_attributes = True
+
 class PostResponse(BaseModel):
     id: int
     title: str
     content: str
-    likes: int
+    likes: list[LikeResponse] = []
     user: UserResponse
     comments: list[CommentResponse] = []
     class Config:

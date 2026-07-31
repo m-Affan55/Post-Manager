@@ -2,7 +2,7 @@ import { useContext, useState } from "react"
 import '../Styles/Post.css'
 import { FriendsContext } from "../Context/FriendsProvider.jsx"
 import { AiFillLike, AiOutlineLike } from 'react-icons/ai'
-import { CreatePost, GetAllUserPosts, DeletePost, UpdatePost } from '../Services/post.js'
+import { CreatePost, GetAllUserPosts, DeletePost, UpdatePost, LikePost, UnlikePost } from '../Services/post.js'
 import { useEffect } from "react"
 import { AddComment, UpdateComment, DeleteComment } from '../Services/comments.js'
 import { getUserName } from '../Services/auth.js'
@@ -22,6 +22,12 @@ export default function Post() {
     const { friends } = useContext(FriendsContext);
 
     const [shareIndex, setShareIndex] = useState(null)
+    
+    // Comment edit state
+    const [editCommentId, setEditCommentId] = useState(null);
+    const [editCommentContent, setEditCommentContent] = useState("");
+
+    const currentUserId = parseInt(localStorage.getItem("current_user_id") || "0");
 
     const [post, setPosts] = useState([]);
 
@@ -49,7 +55,7 @@ export default function Post() {
                     // Add frontend properties to each post from the database
                     const formattedPosts = res.map(p => ({
                         ...p,
-                        likes: p.likes || 0,
+                        likes: p.likes || [],
                         comments: p.comments || [],
                         showComments: false
                     }));
@@ -99,12 +105,32 @@ export default function Post() {
         ))
     }
 
-    const handleDel = (index) => {
-        setPosts(post.map((p, i) => (
-
-            i === index ? { ...p, comments: p.comments.slice(0, -1) }
+    const handleDel = async (postIndex, commentId) => {
+        try {
+            await DeleteComment(commentId);
+            setPosts(post.map((p, i) =>
+                i === postIndex ? { ...p, comments: p.comments.filter(c => c.id !== commentId) }
                 : p
-        )))
+            ));
+        } catch (error) {
+            console.error("Error in deleting comment", error);
+        }
+    }
+
+    const handleEditCommentSubmit = async (postIndex, commentId) => {
+        if (!editCommentContent.trim()) return;
+        try {
+            await UpdateComment({ id: commentId, content: editCommentContent });
+            setPosts(post.map((p, i) =>
+                i === postIndex ? {
+                    ...p,
+                    comments: p.comments.map(c => c.id === commentId ? { ...c, content: editCommentContent } : c)
+                } : p
+            ));
+            setEditCommentId(null);
+        } catch (error) {
+            console.error("Error in updating comment", error);
+        }
     }
 
     const handleChange = (e) => {
@@ -120,7 +146,7 @@ export default function Post() {
             const addpostRes = await CreatePost(addPost);
             console.log(addpostRes);
             if (addpostRes) {
-                setPosts([...post, addpostRes])
+                setPosts([...post, { ...addpostRes, showComments: false }]);
             }
         }
         catch (error) {
@@ -133,17 +159,36 @@ export default function Post() {
         setNoPost(false);
 
     }
-    const handleLike = (index) => {
-        setPosts(post.map((p, i) =>
-            i === index ? {
-                ...p,
-                likes: p.likes + 1
+    const handleLike = async (index, postId) => {
+        try {
+            const likeRes = await LikePost(postId);
+            if (likeRes) {
+                setPosts(post.map((p, i) =>
+                    i === index ? {
+                        ...p,
+                        likes: [...p.likes, likeRes]
+                    }
+                    : p
+                ));
             }
-                : p
-        ))
+        } catch (error) {
+            console.error("Error in liking post", error);
+        }
     }
-    const handleUnLike = (index) => {
-        setPosts(post.map((p, i) => i == index ? { ...p, likes: p.likes - 1 } : p))
+
+    const handleUnLike = async (index, postId) => {
+        try {
+            await UnlikePost(postId);
+            setPosts(post.map((p, i) => 
+                i === index ? { 
+                    ...p, 
+                    likes: p.likes.filter(l => l.user_id !== currentUserId) 
+                } 
+                : p
+            ));
+        } catch (error) {
+            console.error("Error in unliking post", error);
+        }
     }
     const handleDelPost = async (id) => {
         try {
@@ -199,13 +244,15 @@ export default function Post() {
                 </div>
                 )}
             </div>
-
+                {!ISAddActive && (
+                    <div>
             <div className="user-greeting">
-                <h1>Hey! {username}</h1>
+            <h1>Hey! {username}</h1>
             </div>
                 <div className="user-post-header">
                 <h1>Your Posts</h1>
             </div>
+            </div>)}
             {NoPost && !ISAddActive && (
                 <div className="no-post">
                     <h1>No Post Yet</h1>
@@ -243,8 +290,12 @@ export default function Post() {
                                 <p>{p.content}</p>
                             )}
                             <div className="like-container">
-                                {p.likes == 0 ? <AiOutlineLike size={24} onClick={() => handleLike(index)} /> : <AiFillLike size={24} onClick={() => handleUnLike(index)} />}
-                                <p>{p.likes}</p>
+                                {p.likes.some(l => l.user_id === currentUserId) ? (
+                                    <AiFillLike size={24} onClick={() => handleUnLike(index, p.id)} />
+                                ) : (
+                                    <AiOutlineLike size={24} onClick={() => handleLike(index, p.id)} />
+                                )}
+                                <p>{p.likes.length}</p>
                             </div>
                             <div className="post-buttons">
 
@@ -259,9 +310,12 @@ export default function Post() {
                                     <div className="share-container-parent">
                                         <h1>Friends List</h1>
                                         {friends.map((f) => (
-                                            <div className="share-container">
+                                            <div className="share-container" key={f.id}>
                                                 <p>{f.name}</p>
-                                                <button onClick={() => setShareIndex(null)}>send</button>
+                                                <button onClick={() => {
+                                                    alert(`Post shared with ${f.name}!`);
+                                                    setShareIndex(null);
+                                                }}>send</button>
                                             </div>
                                         ))}
                                     </div>
@@ -284,7 +338,28 @@ export default function Post() {
                                     <div className="comments-list">
                                         {p.comments.map((c) => (
                                             <div key={c.id} className="comment-wrapper">
-                                                <p className="comment">{c.content}</p>
+                                                {editCommentId === c.id ? (
+                                                    <div style={{display: 'flex', gap: '10px', width: '100%'}}>
+                                                        <input 
+                                                            type="text" 
+                                                            value={editCommentContent} 
+                                                            onChange={(e) => setEditCommentContent(e.target.value)}
+                                                            style={{flex: 1}}
+                                                        />
+                                                        <button onClick={() => handleEditCommentSubmit(index, c.id)} style={{padding: '5px', fontSize: '12px'}}>Save</button>
+                                                        <button onClick={() => setEditCommentId(null)} style={{padding: '5px', fontSize: '12px', background: '#ccc'}}>Cancel</button>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <p className="comment"><strong>{c.user ? c.user.name : "Unknown"}</strong>: {c.content}</p>
+                                                        {c.user && c.user.id === currentUserId && (
+                                                            <div style={{display: 'flex', gap: '10px', fontSize: '12px', marginLeft: 'auto'}}>
+                                                                <button onClick={() => { setEditCommentId(c.id); setEditCommentContent(c.content); }} style={{background: 'none', color: '#007bff', border: 'none', padding: 0}}>Edit</button>
+                                                                <button onClick={() => handleDel(index, c.id)} style={{background: 'none', color: 'red', border: 'none', padding: 0}}>Delete</button>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
                                             </div>
                                         ))}
                                     </div>

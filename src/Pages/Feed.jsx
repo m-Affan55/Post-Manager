@@ -120,7 +120,7 @@ export default function Feed() {
                                     <h1>Friends List</h1>
                                     {friends.map((f, fIdx) => (
                                         <div key={fIdx} className="share-container">
-                                            <p>{f}</p>
+                                            <p>{f.name}</p>
                                             <button onClick={() => setShareIndex(null)}>send</button>
                                         </div>
                                     ))}

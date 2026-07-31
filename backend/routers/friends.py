@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from dependencies import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_
-from schemas import FriendRequestResponse
+from schemas import FriendRequestResponse, UserResponse
 from routers.auth import get_current_user
 import models
 
@@ -37,6 +37,14 @@ def send_friend_request(user_id: int, current_user: int = Depends(get_current_us
 def get_friend_requests(current_user: int = Depends(get_current_user), db: Session = Depends(get_db)):
     requests = db.query(models.Friendship).filter(
         models.Friendship.friend_id == current_user, 
+        models.Friendship.status == "pending"
+    ).all()
+    return requests
+
+@router.get("/sent-requests", response_model=list[FriendRequestResponse])
+def get_sent_requests(current_user: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    requests = db.query(models.Friendship).filter(
+        models.Friendship.user_id == current_user, 
         models.Friendship.status == "pending"
     ).all()
     return requests
@@ -78,3 +86,4 @@ def get_all_friends(current_user: int = Depends(get_current_user), db: Session =
         models.Friendship.status == "accepted"
     ).all()
     return friends
+

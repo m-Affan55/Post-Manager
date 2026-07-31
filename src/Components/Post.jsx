@@ -260,7 +260,7 @@ export default function Post() {
                                         <h1>Friends List</h1>
                                         {friends.map((f) => (
                                             <div className="share-container">
-                                                <p>{f}</p>
+                                                <p>{f.name}</p>
                                                 <button onClick={() => setShareIndex(null)}>send</button>
                                             </div>
                                         ))}

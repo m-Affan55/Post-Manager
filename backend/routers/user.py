@@ -46,3 +46,8 @@ def get_me(current_user: int = Depends(get_current_user), db:Session = Depends(g
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+@router.get("/", response_model=list[UserResponse])
+def get_all_users(current_user: int = Depends(get_current_user), db:Session = Depends(get_db)):
+    users = db.query(User).filter(User.id != current_user).all()
+    return users

@@ -7,6 +7,9 @@
     box-shadow: var(--shadow-sm);
     border-bottom: 1px solid var(--border);
     margin-bottom: 32px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 .navbar-logo {
@@ -45,8 +48,9 @@
 }
 
 .nav-btn.active {
-    background-color: var(--primary);
-    color: white;
+    background-color: var(--primary-light);
+    color: var(--primary);
+    font-weight: 600;
 }
 
 /* Specific style for logout button if needed */

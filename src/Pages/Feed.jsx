@@ -150,9 +150,10 @@ export default function Feed() {
                         <div className="post-header">
                             <div>
                                 <h1>{p.title}</h1>
-                                <small style={{ color: "#666", fontSize: "14px" }}>
-                                    Posted by: {p.user ? p.user.name : "Unknown"}
-                                </small>
+                                <div className="post-meta">
+                                    <div className="avatar-circle">{p.user && p.user.name ? p.user.name[0] : "U"}</div>
+                                    <small>Posted by: {p.user ? p.user.name : "Unknown"}</small>
+                                </div>
                             </div>
                         </div>
                         <p>{p.content}</p>
@@ -219,7 +220,13 @@ export default function Feed() {
                                                 </div>
                                             ) : (
                                                 <>
-                                                    <p className="comment"><strong>{c.user ? c.user.name : "Unknown"}</strong>{c.content}</p>
+                                                <div className="comment">
+                                                    <div className="comment-header">
+                                                        <div className="avatar-circle">{c.user && c.user.name ? c.user.name[0] : "U"}</div>
+                                                        <strong>{c.user ? c.user.name : "Unknown"}</strong>
+                                                    </div>
+                                                    <div>{c.content}</div>
+                                                </div>
                                                     {c.user && c.user.id === currentUserId && (
                                                         <div style={{display: 'flex', gap: '12px', marginTop: '6px', paddingLeft: '4px'}}>
                                                             <button onClick={() => { setEditCommentId(c.id); setEditCommentContent(c.content); }} style={{background: 'none', color: 'var(--text-muted)', border: 'none', padding: 0, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px'}}><FiEdit2 /> Edit</button>

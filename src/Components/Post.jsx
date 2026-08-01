@@ -244,27 +244,35 @@ export default function Post() {
     return (
         <>
 
-            <div className="add-post-container-parent">
-
-                <button className={!ISAddActive ? "add-post-btn" : "cancel-btn"} onClick={() => setIsAddActive(!ISAddActive)}>
-                    {!ISAddActive ? "Add Post" : <span style={{display: 'flex', alignItems: 'center', gap: '5px'}}><IoMdArrowBack /> Back</span>}
-                </button>
-                {ISAddActive && (<div className="add-container">
-                    <input type="text" placeholder="Title" name="title" value={addPost.title} onChange={handleChange}></input>
-                    <textarea placeholder="Content" rows={6} name="content" value={addPost.content} onChange={handleChange}></textarea>
-                    <button onClick={handleAddPost}>Post</button>
-                </div>
+            <div className="home-header">
+                {!ISAddActive && (
+                    <div className="home-header-content">
+                        <h1>Welcome back, {username} — What's on your mind today?</h1>
+                        <button className="add-post-btn" onClick={() => setIsAddActive(true)}>
+                            Add Post / Start Writing
+                        </button>
+                    </div>
+                )}
+                
+                {ISAddActive && (
+                    <div className="add-post-container-parent">
+                        <button className="cancel-btn" onClick={() => setIsAddActive(false)}>
+                            <span style={{display: 'flex', alignItems: 'center', gap: '5px'}}><IoMdArrowBack /> Back</span>
+                        </button>
+                        <div className="add-container">
+                            <input type="text" placeholder="Title" name="title" value={addPost.title} onChange={handleChange}></input>
+                            <textarea placeholder="Content" rows={6} name="content" value={addPost.content} onChange={handleChange}></textarea>
+                            <button onClick={handleAddPost}>Post</button>
+                        </div>
+                    </div>
                 )}
             </div>
-                {!ISAddActive && (
-                    <div>
-            <div className="user-greeting">
-            <h1>Hey! {username}</h1>
-            </div>
+
+            {!ISAddActive && (
                 <div className="user-post-header">
-                <h1>Your Posts</h1>
-            </div>
-            </div>)}
+                    <h2>Your Posts</h2>
+                </div>
+            )}
             {NoPost && !ISAddActive && (
                 <div className="no-post">
                     <h1>No Post Yet</h1>
@@ -363,7 +371,13 @@ export default function Post() {
                                                     </div>
                                                 ) : (
                                                     <>
-                                                        <p className="comment"><strong>{c.user ? c.user.name : "Unknown"}</strong>{c.content}</p>
+                                                        <div className="comment">
+                                                            <div className="comment-header">
+                                                                <div className="avatar-circle">{c.user && c.user.name ? c.user.name[0] : "U"}</div>
+                                                                <strong>{c.user ? c.user.name : "Unknown"}</strong>
+                                                            </div>
+                                                            <div>{c.content}</div>
+                                                        </div>
                                                         {c.user && c.user.id === currentUserId && (
                                                             <div style={{display: 'flex', gap: '12px', marginTop: '6px', paddingLeft: '4px'}}>
                                                                 <button onClick={() => { setEditCommentId(c.id); setEditCommentContent(c.content); }} style={{background: 'none', color: 'var(--text-muted)', border: 'none', padding: 0, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px'}}><FiEdit2 /> Edit</button>

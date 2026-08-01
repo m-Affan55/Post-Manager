@@ -129,6 +129,9 @@ function Friends() {
             {toggleFriendSection === 'find-people' && (
                 <div style={{width: "100%"}}>
                     <input type="text" placeholder="Find People..." value={searchFriend} onChange={(e) => setSearchFriend(e.target.value)} />
+                    {searchFriend && filteredUsers.length === 0 && (
+                        <p style={{textAlign: "center", marginTop: "20px", color: "var(--text-muted)"}}>No user found.</p>
+                    )}
                     {searchFriend && filteredUsers.map((u, idx) => {
                         const isRequested = !!sentRequests[u.id];
                         return (
@@ -149,6 +152,9 @@ function Friends() {
                 <div style={{width: "100%"}}>
                     <input type="text" placeholder="Search Friends" value={searchFriend} onChange={SearchHandler} />
                     <h1>All Friends</h1>
+                    {searchFriend && SearchFriendsList.length === 0 && (
+                        <p style={{textAlign: "center", marginTop: "20px", color: "var(--text-muted)"}}>No friend found.</p>
+                    )}
                     {SearchFriendsList.map((f, idx) => {
                         // Display the name of the OTHER person in the friendship
                         const friendName = f.requester ? f.requester.name : (f.addressee ? f.addressee.name : "Friend");

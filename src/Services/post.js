@@ -111,5 +111,49 @@ export async function DeletePost(postId){
         {
             console.error("Error in deleting post",error);
         }      
+}
+
+export async function LikePost(postId){
+    try{
+        const response = await fetch(`${Base_url}/${postId}/like`,{
+            method : 'POST',
+            headers : getAuthToken(),
+        });
+
+        if(!response.ok)
+        {
+            throw new Error("Error in liking post") 
+        }
+        return await response.json();
+        
     }
+    catch(error)
+        {
+            console.error("Error in liking post",error);
+        }      
+}
+
+export async function UnlikePost(postId){
+    try{
+        const response = await fetch(`${Base_url}/${postId}/like`,{
+            method : 'DELETE',
+            headers : getAuthToken(),
+        });
+
+        if(!response.ok)
+        {
+            throw new Error("Error in unliking post") 
+        }
+        if (response.status == 204)
+        {
+            return true;
+        }
+        return await response.json();
+        
+    }
+    catch(error)
+        {
+            console.error("Error in unliking post",error);
+        }      
+}
 

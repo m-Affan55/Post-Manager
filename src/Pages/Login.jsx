@@ -1,7 +1,7 @@
 import {Link} from 'react-router-dom';
 import '../Styles/Auth.css';
 import { useState } from 'react';
-import { loginUser } from '../Services/auth.js';
+import { loginUser, getUserName } from '../Services/auth.js';
 import { useNavigate } from 'react-router-dom';
 
 export default function Login(){
@@ -10,18 +10,23 @@ export default function Login(){
     async function LoginHandler(e)
     {
         e.preventDefault();
-        try{
-            const res = await loginUser(user.email , user.password);
+        try {
+            const res = await loginUser(user.email, user.password);
             console.log(res);
-            if(res)
-            {
+            if (res) {
+                // Fetch and save current user ID immediately so frontend knows who is logged in
+                const userData = await getUserName();
+                if (userData) {
+                    localStorage.setItem("current_user_id", userData.id);
+                }
                 navigate("/home");
             }
         }
         catch(error)
-            {
-                console.error("Error in Login",error);
-            }
+        {
+            console.error("Error in Login",error);
+            alert(error.message);
+        }
     }
     
     return(

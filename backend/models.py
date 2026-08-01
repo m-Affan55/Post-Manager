@@ -11,9 +11,9 @@ class User(Base):
     name = Column(String)
     email = Column(String, unique=True)
     password = Column(String)
-    posts = relationship("Post", back_populates="user")
-    comments = relationship("Comment", back_populates="user")
-
+    posts = relationship("Post", back_populates="user", cascade="all, delete-orphan")
+    comments = relationship("Comment", back_populates="user", cascade="all, delete-orphan")
+    likes = relationship("Like", back_populates="user", cascade="all, delete-orphan")
 
 class Post(Base):
     __tablename__ = "posts"
@@ -21,9 +21,9 @@ class Post(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     title = Column(String , nullable=False)
     content = Column(String, nullable=False)
-    likes = Column(Integer, default = 0)
     user = relationship("User", back_populates="posts")
-    comments = relationship("Comment", back_populates="post")
+    comments = relationship("Comment", back_populates="post", cascade="all, delete-orphan")
+    likes = relationship("Like", back_populates="post", cascade="all, delete-orphan")
 
 class Comment(Base):
     __tablename__= "comments"
@@ -34,6 +34,13 @@ class Comment(Base):
     post = relationship("Post", back_populates="comments")
     user = relationship("User", back_populates="comments")
 
+class Like(Base):
+    __tablename__ = "likes"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    post_id = Column(Integer, ForeignKey("posts.id"))
+    user = relationship("User", back_populates="likes")
+    post = relationship("Post", back_populates="likes")
 
 class Friendship(Base):
     __tablename__ = "friendships"

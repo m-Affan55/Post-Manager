@@ -2,11 +2,15 @@ import { useContext, useState } from "react"
 import '../Styles/Post.css'
 import { FriendsContext } from "../Context/FriendsProvider.jsx"
 import { AiFillLike, AiOutlineLike } from 'react-icons/ai'
-import { CreatePost, GetAllUserPosts, DeletePost, UpdatePost } from '../Services/post.js'
+import { FiEdit2, FiTrash2, FiMessageCircle, FiShare } from 'react-icons/fi'
+import { IoMdArrowBack } from 'react-icons/io'
+import { useLocation } from 'react-router-dom'
+import { CreatePost, GetAllUserPosts, DeletePost, UpdatePost, LikePost, UnlikePost } from '../Services/post.js'
 import { useEffect } from "react"
 import { AddComment, UpdateComment, DeleteComment } from '../Services/comments.js'
 import { getUserName } from '../Services/auth.js'
 export default function Post() {
+    const location = useLocation();
     const [addComments, setAddComments] = useState('')
     const [ISAddActive, setIsAddActive] = useState(false)
     const [addPost, setAddPost] = useState({
@@ -16,16 +20,27 @@ export default function Post() {
         showComments: false,
         likes: 0
     })
-    const [NoPost, setNoPost] = useState(true);
+    const [NoPost, setNoPost] = useState(false);
     const [editPostId, setEditPostId] = useState(null);
     const [editPostData, setEditPostData] = useState({ title: "", content: "" });
     const { friends } = useContext(FriendsContext);
 
     const [shareIndex, setShareIndex] = useState(null)
+    
+    // Comment edit state
+    const [editCommentId, setEditCommentId] = useState(null);
+    const [editCommentContent, setEditCommentContent] = useState("");
+
+    const currentUserId = parseInt(localStorage.getItem("current_user_id") || "0");
 
     const [post, setPosts] = useState([]);
 
     const [username, setusername] = useState("");
+
+    // Reset add post state when clicking Home in navbar
+    useEffect(() => {
+        setIsAddActive(false);
+    }, [location.key]);
 
     useEffect(()=>{
         const UserName = async () => {
@@ -49,19 +64,20 @@ export default function Post() {
                     // Add frontend properties to each post from the database
                     const formattedPosts = res.map(p => ({
                         ...p,
-                        likes: p.likes || 0,
+                        likes: p.likes || [],
                         comments: p.comments || [],
                         showComments: false
                     }));
                     console.log(formattedPosts)
                     setPosts(formattedPosts);
-                    if (formattedPosts.length > 0) {
-                        setNoPost(false);
-                    }
+                    setNoPost(formattedPosts.length === 0);
+                } else {
+                    setNoPost(true);
                 }
             }
             catch (error) {
                 console.error("Error in getting posts", error);
+                setNoPost(true);
             }
         }
         getPosts();
@@ -99,12 +115,32 @@ export default function Post() {
         ))
     }
 
-    const handleDel = (index) => {
-        setPosts(post.map((p, i) => (
-
-            i === index ? { ...p, comments: p.comments.slice(0, -1) }
+    const handleDel = async (postIndex, commentId) => {
+        try {
+            await DeleteComment(commentId);
+            setPosts(post.map((p, i) =>
+                i === postIndex ? { ...p, comments: p.comments.filter(c => c.id !== commentId) }
                 : p
-        )))
+            ));
+        } catch (error) {
+            console.error("Error in deleting comment", error);
+        }
+    }
+
+    const handleEditCommentSubmit = async (postIndex, commentId) => {
+        if (!editCommentContent.trim()) return;
+        try {
+            await UpdateComment({ id: commentId, content: editCommentContent });
+            setPosts(post.map((p, i) =>
+                i === postIndex ? {
+                    ...p,
+                    comments: p.comments.map(c => c.id === commentId ? { ...c, content: editCommentContent } : c)
+                } : p
+            ));
+            setEditCommentId(null);
+        } catch (error) {
+            console.error("Error in updating comment", error);
+        }
     }
 
     const handleChange = (e) => {
@@ -120,7 +156,7 @@ export default function Post() {
             const addpostRes = await CreatePost(addPost);
             console.log(addpostRes);
             if (addpostRes) {
-                setPosts([...post, addpostRes])
+                setPosts([...post, { ...addpostRes, showComments: false }]);
             }
         }
         catch (error) {
@@ -133,17 +169,36 @@ export default function Post() {
         setNoPost(false);
 
     }
-    const handleLike = (index) => {
-        setPosts(post.map((p, i) =>
-            i === index ? {
-                ...p,
-                likes: p.likes + 1
+    const handleLike = async (index, postId) => {
+        try {
+            const likeRes = await LikePost(postId);
+            if (likeRes) {
+                setPosts(post.map((p, i) =>
+                    i === index ? {
+                        ...p,
+                        likes: [...p.likes, likeRes]
+                    }
+                    : p
+                ));
             }
-                : p
-        ))
+        } catch (error) {
+            console.error("Error in liking post", error);
+        }
     }
-    const handleUnLike = (index) => {
-        setPosts(post.map((p, i) => i == index ? { ...p, likes: p.likes - 1 } : p))
+
+    const handleUnLike = async (index, postId) => {
+        try {
+            await UnlikePost(postId);
+            setPosts(post.map((p, i) => 
+                i === index ? { 
+                    ...p, 
+                    likes: p.likes.filter(l => l.user_id !== currentUserId) 
+                } 
+                : p
+            ));
+        } catch (error) {
+            console.error("Error in unliking post", error);
+        }
     }
     const handleDelPost = async (id) => {
         try {
@@ -191,7 +246,9 @@ export default function Post() {
 
             <div className="add-post-container-parent">
 
-                <button className={!ISAddActive ? "add-post-btn" : "cancel-btn"} onClick={() => setIsAddActive(!ISAddActive)}>{!ISAddActive ? "Add Post" : "Cancel"}</button>
+                <button className={!ISAddActive ? "add-post-btn" : "cancel-btn"} onClick={() => setIsAddActive(!ISAddActive)}>
+                    {!ISAddActive ? "Add Post" : <span style={{display: 'flex', alignItems: 'center', gap: '5px'}}><IoMdArrowBack /> Back</span>}
+                </button>
                 {ISAddActive && (<div className="add-container">
                     <input type="text" placeholder="Title" name="title" value={addPost.title} onChange={handleChange}></input>
                     <textarea placeholder="Content" rows={6} name="content" value={addPost.content} onChange={handleChange}></textarea>
@@ -199,13 +256,15 @@ export default function Post() {
                 </div>
                 )}
             </div>
-
+                {!ISAddActive && (
+                    <div>
             <div className="user-greeting">
-                <h1>Hey! {username}</h1>
+            <h1>Hey! {username}</h1>
             </div>
                 <div className="user-post-header">
                 <h1>Your Posts</h1>
             </div>
+            </div>)}
             {NoPost && !ISAddActive && (
                 <div className="no-post">
                     <h1>No Post Yet</h1>
@@ -231,8 +290,8 @@ export default function Post() {
                                         </>
                                     ) : (
                                         <>
-                                            <button className="update-post-btn" onClick={() => handleEditClick(p)}>Update</button>
-                                            <button className="delete-post-btn" onClick={() => handleDelPost(p.id)}>Delete</button>
+                                            <button className="update-post-btn" onClick={() => handleEditClick(p)}><FiEdit2 /> Update</button>
+                                            <button className="delete-post-btn" onClick={() => handleDelPost(p.id)}><FiTrash2 /> Delete</button>
                                         </>
                                     )}
                                 </div>
@@ -243,25 +302,32 @@ export default function Post() {
                                 <p>{p.content}</p>
                             )}
                             <div className="like-container">
-                                {p.likes == 0 ? <AiOutlineLike size={24} onClick={() => handleLike(index)} /> : <AiFillLike size={24} onClick={() => handleUnLike(index)} />}
-                                <p>{p.likes}</p>
+                                {p.likes.some(l => l.user_id === currentUserId) ? (
+                                    <AiFillLike size={24} onClick={() => handleUnLike(index, p.id)} />
+                                ) : (
+                                    <AiOutlineLike size={24} onClick={() => handleLike(index, p.id)} />
+                                )}
+                                <p>{p.likes.length}</p>
                             </div>
                             <div className="post-buttons">
 
                                 <button className="toggle-comments-btn" onClick={() => handleShowComment(index)}>
-                                    {p.showComments ? "Hide Comments" : "Show Comments"}
+                                    <FiMessageCircle /> {p.showComments ? "Hide Comments" : "Show Comments"}
                                 </button>
-                                <button className={shareIndex === index ? "cancel-share-btn" : "share-btn"} onClick={() => setShareIndex(shareIndex === index ? null : index
-
-                                )}>Share</button>
+                                <button className={shareIndex === index ? "cancel-share-btn" : "share-btn"} onClick={() => setShareIndex(shareIndex === index ? null : index)}>
+                                    <FiShare /> Share
+                                </button>
 
                                 {shareIndex === index && (
                                     <div className="share-container-parent">
                                         <h1>Friends List</h1>
                                         {friends.map((f) => (
-                                            <div className="share-container">
+                                            <div className="share-container" key={f.id}>
                                                 <p>{f.name}</p>
-                                                <button onClick={() => setShareIndex(null)}>send</button>
+                                                <button onClick={() => {
+                                                    alert(`Post shared with ${f.name}!`);
+                                                    setShareIndex(null);
+                                                }}>send</button>
                                             </div>
                                         ))}
                                     </div>
@@ -284,7 +350,28 @@ export default function Post() {
                                     <div className="comments-list">
                                         {p.comments.map((c) => (
                                             <div key={c.id} className="comment-wrapper">
-                                                <p className="comment">{c.content}</p>
+                                                {editCommentId === c.id ? (
+                                                    <div style={{display: 'flex', gap: '10px', width: '100%'}}>
+                                                        <input 
+                                                            type="text" 
+                                                            value={editCommentContent} 
+                                                            onChange={(e) => setEditCommentContent(e.target.value)}
+                                                            style={{flex: 1}}
+                                                        />
+                                                        <button onClick={() => handleEditCommentSubmit(index, c.id)} style={{padding: '5px', fontSize: '12px'}}>Save</button>
+                                                        <button onClick={() => setEditCommentId(null)} style={{padding: '5px', fontSize: '12px', background: '#ccc'}}>Cancel</button>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <p className="comment"><strong>{c.user ? c.user.name : "Unknown"}</strong>{c.content}</p>
+                                                        {c.user && c.user.id === currentUserId && (
+                                                            <div style={{display: 'flex', gap: '12px', marginTop: '6px', paddingLeft: '4px'}}>
+                                                                <button onClick={() => { setEditCommentId(c.id); setEditCommentContent(c.content); }} style={{background: 'none', color: 'var(--text-muted)', border: 'none', padding: 0, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px'}}><FiEdit2 /> Edit</button>
+                                                                <button onClick={() => handleDel(index, c.id)} style={{background: 'none', color: 'var(--destructive)', border: 'none', padding: 0, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px'}}><FiTrash2 /> Delete</button>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
                                             </div>
                                         ))}
                                     </div>

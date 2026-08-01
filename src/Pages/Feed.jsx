@@ -8,7 +8,7 @@ import { AddComment, UpdateComment, DeleteComment } from '../Services/comments.j
 
 export default function Feed() {
     const [addComments, setAddComments] = useState('')
-    const [NoPost, setNoPost] = useState(true);
+    const [NoPost, setNoPost] = useState(false);
     const { friends } = useContext(FriendsContext);
 
     const [shareIndex, setShareIndex] = useState(null)
@@ -32,13 +32,14 @@ export default function Feed() {
                         showComments: false
                     }));
                     setPosts(formattedPosts);
-                    if (formattedPosts.length > 0) {
-                        setNoPost(false);
-                    }
+                    setNoPost(formattedPosts.length === 0);
+                } else {
+                    setNoPost(true);
                 }
             }
             catch (error) {
-                console.error("Error in getting feed posts", error);
+                console.error("Error in getting posts", error);
+                setNoPost(true);
             }
         }
         getPosts();

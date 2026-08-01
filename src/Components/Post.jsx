@@ -20,7 +20,7 @@ export default function Post() {
         showComments: false,
         likes: 0
     })
-    const [NoPost, setNoPost] = useState(true);
+    const [NoPost, setNoPost] = useState(false);
     const [editPostId, setEditPostId] = useState(null);
     const [editPostData, setEditPostData] = useState({ title: "", content: "" });
     const { friends } = useContext(FriendsContext);
@@ -70,13 +70,14 @@ export default function Post() {
                     }));
                     console.log(formattedPosts)
                     setPosts(formattedPosts);
-                    if (formattedPosts.length > 0) {
-                        setNoPost(false);
-                    }
+                    setNoPost(formattedPosts.length === 0);
+                } else {
+                    setNoPost(true);
                 }
             }
             catch (error) {
                 console.error("Error in getting posts", error);
+                setNoPost(true);
             }
         }
         getPosts();

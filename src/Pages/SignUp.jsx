@@ -20,18 +20,18 @@ export default function SignUp(){
         if(!/[A-Z]/.test(userData.password) || !/[a-z]/.test(userData.password) || !/[0-9]/.test(userData.password)) {
             return alert("Password must contain at least one uppercase letter, one lowercase letter, and one number");
         }
-        try{
-            const result = await Signup(userData.name , userData.email , userData.password);
+        try {
+            const result = await Signup(userData.name, userData.email, userData.password);
             if (result) {
-                alert("Signup successful");
+                alert("Signup successful! Please log in.");
+                navigate('/'); // ← only navigate on success
             }
-            navigate('/')
-        }
-        catch(error)
-        {
-            console.error("Error in signup",error);
+        } catch (error) {
+            console.error("Error in signup", error);
             alert(error.message);
+            // navigate('/') is NOT called here — user stays on signup form to retry
         }
+
         
     }
     const handleChange = (e) => {

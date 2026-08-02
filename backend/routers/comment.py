@@ -7,9 +7,17 @@ from schemas import CommentCreate,CommentResponse,CommentUpdate
 from routers.auth import get_current_user
 router = APIRouter(prefix='/comments',tags=['comments'])
 @router.get("/{post_id}", response_model=list[CommentResponse])
-def get_comments(post_id: int , db:Session = Depends(get_db)):
+def get_comments(
+    post_id: int,
+    # Adding current_user here means FastAPI will enforce authentication.
+    # Without a valid token the request is rejected with 401 before this
+    # function body is ever reached.
+    current_user: int = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     comments = db.query(Comment).filter(Comment.post_id == post_id).all()
     return comments
+
 
 @router.post("/{post_id}", response_model=CommentResponse, status_code=status.HTTP_201_CREATED)
 def add_comment(comment: CommentCreate,post_id: int , current_user: int = Depends(get_current_user),db:Session = Depends(get_db)):

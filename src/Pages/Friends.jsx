@@ -98,15 +98,19 @@ function Friends() {
     }
 
     async function handleAccept(id) {
-        await acceptRequest(id);
-        setLocalRequests(localRequests.filter(r => r.id !== id));
-        // Refetch friends for the local page
-        const friendsRes = await getAllFriends();
-        setLocalFriends(friendsRes);
-        setSearchFriendsList(friendsRes);
-        // Refresh the global context so the Share menu gets the new friend immediately!
-        if (refreshFriends) {
-            await refreshFriends();
+        try {
+            await acceptRequest(id);
+            setLocalRequests(localRequests.filter(r => r.id !== id));
+            // Guard: getAllFriends() can return undefined on network error.
+            // Without the check, setLocalFriends(undefined) → next .map() crashes the page.
+            const friendsRes = await getAllFriends();
+            if (friendsRes) {
+                setLocalFriends(friendsRes);
+                setSearchFriendsList(friendsRes);
+            }
+            if (refreshFriends) await refreshFriends();
+        } catch (error) {
+            alert(`Could not accept request: ${error.message}`);
         }
     }
 
@@ -121,9 +125,24 @@ function Friends() {
     return (
         <div className="friends-container">
             <div className="friend-section">
-                <button onClick={() => setToggleFriendSection('yourConnections')}>Your Connections ({localFriends.length})</button>
-                <button onClick={() => setToggleFriendSection('find-people')}>Find People</button>
-                <button onClick={() => setToggleFriendSection('requests')}>Requests ({localRequests.length})</button>
+                <button
+                    className={toggleFriendSection === 'yourConnections' ? 'active' : ''}
+                    onClick={() => setToggleFriendSection('yourConnections')}
+                >
+                    Your Connections ({localFriends.length})
+                </button>
+                <button
+                    className={toggleFriendSection === 'find-people' ? 'active' : ''}
+                    onClick={() => setToggleFriendSection('find-people')}
+                >
+                    Find People
+                </button>
+                <button
+                    className={toggleFriendSection === 'requests' ? 'active' : ''}
+                    onClick={() => setToggleFriendSection('requests')}
+                >
+                    Requests ({localRequests.length})
+                </button>
             </div>
 
             {toggleFriendSection === 'find-people' && (
@@ -135,7 +154,7 @@ function Friends() {
                     {searchFriend && filteredUsers.map((u, idx) => {
                         const isRequested = !!sentRequests[u.id];
                         return (
-                            <div className="friend-item" key={idx}>
+                            <div className="friend-item" key={idx} style={{ animationDelay: `${idx * 0.05}s` }}>
                                 <p>{u.name}</p>
                                 {isRequested ? (
                                     <button className="remove-btn" onClick={() => handleCancelRequest(u.id, sentRequests[u.id])} style={{ backgroundColor: "#9ca3af" }}>Requested</button>
@@ -159,7 +178,7 @@ function Friends() {
                         // Display the name of the OTHER person in the friendship
                         const friendName = f.requester ? f.requester.name : (f.addressee ? f.addressee.name : "Friend");
                         return (
-                            <div className="friend-item" key={f.id || idx}>
+                            <div className="friend-item" key={f.id || idx} style={{ animationDelay: `${idx * 0.05}s` }}>
                                 <p>{friendName}</p>
                                 <button className="remove-btn" onClick={() => handleRemove(f.id)}>UnFollow</button>
                             </div>
@@ -171,7 +190,7 @@ function Friends() {
             {toggleFriendSection === 'requests' && (
                 <div style={{width: "100%"}}>
                     {localRequests.map((r, idx) => (
-                        <div className="friend-item" key={r.id || idx}>
+                        <div className="friend-item" key={r.id || idx} style={{ animationDelay: `${idx * 0.05}s` }}>
                             <p>{r.requester ? r.requester.name : "Someone"} sent you a friend request</p>
                             <div className="request-actions">
                                 <button className="remove-btn" onClick={() => handleAccept(r.id)}>Accept</button>

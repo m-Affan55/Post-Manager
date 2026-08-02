@@ -1,74 +1,58 @@
-const Base_Url = `http://localhost:8000/users`;
-import { getAuthToken } from "./post";
+import { API_BASE_URL } from "../config.js";
+import { getAuthToken } from "./post.js";
 
-export async function Signup(name , email , password){
-    try{
-        const response = await fetch(`${Base_Url}/register`,
-            {
-                method : 'POST',
-                headers : {
-                    'Content-Type' : 'application/json'
-                },
-                body : JSON.stringify({name , email , password
-                })
-            }
-        );
-        if(!response.ok)
-        {
-            const errData = await response.json();
-            throw new Error(errData.detail || "Error in signup");
+const Base_Url = `${API_BASE_URL}/users`;
+
+export async function Signup(name, email, password) {
+    try {
+        const response = await fetch(`${Base_Url}/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, password }),
+        });
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.detail || "Signup failed");
         }
-        const data = await response.json();
-        return data;
-        
+        return await response.json();
+    } catch (error) {
+        console.error("Signup:", error);
+        throw error; // propagate to SignUp.jsx so the form can display the message
     }
-    catch(error)
-        {
-            console.error("Error in signup",error);
-            throw error;
-        }      
 }
 
-export async function loginUser(email , password){
-    try{
-        const response = await fetch(`${Base_Url}/login`,{
-            method : "POST",
-            headers : {
-                "Content-Type" : "application/json"
-            },
-            body : JSON.stringify({email , password})
+export async function loginUser(email, password) {
+    try {
+        const response = await fetch(`${Base_Url}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
         });
-        if(!response.ok)
-        {
-            const errData = await response.json();
-            throw new Error(errData.detail || "Error in Login");
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.detail || "Login failed");
         }
         const data = await response.json();
-        localStorage.setItem("token",data.token);
+        localStorage.setItem("token", data.token);
         return data;
-        
+    } catch (error) {
+        console.error("loginUser:", error);
+        throw error;
     }
-    catch(error)
-        {
-            console.error("Error in Login",error);
-            throw error;
-        }      
 }
-export async function getUserName(){
-    try{
-        const response = await fetch(`${Base_Url}/me`,{
-            method : 'GET',
-            headers : getAuthToken(),
+
+export async function getUserName() {
+    try {
+        const response = await fetch(`${Base_Url}/me`, {
+            method: "GET",
+            headers: getAuthToken(),
         });
-        if(!response.ok)
-        {
-            throw new Error("Error while getting User Name")
+        if (!response.ok) {
+            throw new Error("Could not fetch current user");
         }
-        const data = await response.json();
-        return data;
-    }
-    catch(error)
-    {
-        console.error("Error in getting User Name",error);
+        return await response.json();
+    } catch (error) {
+        console.error("getUserName:", error);
+        throw error;
     }
 }

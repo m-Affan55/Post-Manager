@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect } from "react"
+import { useContext, useState, useEffect, useCallback } from "react"
 import '../Styles/Post.css'
 import { FriendsContext } from "../Context/FriendsProvider.jsx"
 import { AiFillLike, AiOutlineLike } from 'react-icons/ai'
@@ -6,243 +6,316 @@ import { FiEdit2, FiTrash2, FiMessageCircle, FiShare } from 'react-icons/fi'
 import { GetAllFeedPosts, LikePost, UnlikePost } from '../Services/post.js'
 import { AddComment, UpdateComment, DeleteComment } from '../Services/comments.js'
 
-export default function Feed() {
-    const [addComments, setAddComments] = useState('')
-    const [NoPost, setNoPost] = useState(false);
-    const { friends } = useContext(FriendsContext);
+const PAGE_SIZE = 20;
 
-    const [shareIndex, setShareIndex] = useState(null)
+export default function Feed() {
+    // Per-post comment inputs: { [postId]: "draft text" }
+    const [commentInputs, setCommentInputs] = useState({});
+
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState("");
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+    const { friends } = useContext(FriendsContext);
+    const [shareIndex, setShareIndex] = useState(null);
     const [post, setPosts] = useState([]);
-    
-    // Comment edit state
+
+    // Pagination state
+    const [skip, setSkip] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+
     const [editCommentId, setEditCommentId] = useState(null);
     const [editCommentContent, setEditCommentContent] = useState("");
 
     const currentUserId = parseInt(localStorage.getItem("current_user_id") || "0");
 
+    // Fetch the first page on mount
     useEffect(() => {
         const getPosts = async () => {
+            setIsLoading(true);
+            setLoadError("");
             try {
-                const res = await GetAllFeedPosts();
-                if (res) {
-                    const formattedPosts = res.map(p => ({
-                        ...p,
-                        likes: p.likes || [],
-                        comments: p.comments || [],
-                        showComments: false
-                    }));
-                    setPosts(formattedPosts);
-                    setNoPost(formattedPosts.length === 0);
-                } else {
-                    setNoPost(true);
-                }
-            }
-            catch (error) {
-                console.error("Error in getting posts", error);
-                setNoPost(true);
-            }
-        }
-        getPosts();
-    }, [])
-
-    const handleAdd = async (index, post_id) => {
-        if (!addComments.trim()) return;
-
-        try {
-            const addCommentRes = await AddComment({ content: addComments, post_id: post_id });
-
-            setPosts(post.map((p, i) =>
-                i === index ? {
+                const res = await GetAllFeedPosts(0, PAGE_SIZE);
+                const formatted = res.map(p => ({
                     ...p,
-                    comments: [...p.comments, addCommentRes]
-                }
-                    : p
-            ))
-            setAddComments('')
+                    likes: p.likes || [],
+                    comments: p.comments || [],
+                    showComments: false
+                }));
+                setPosts(formatted);
+                setSkip(PAGE_SIZE);
+                // If the API returned fewer items than the page size, there are no more pages
+                setHasMore(res.length === PAGE_SIZE);
+            } catch (error) {
+                setLoadError("Failed to load feed. Please refresh the page.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        getPosts();
+    }, []);
+
+    // Load the next page (appended to the existing list)
+    const loadMore = async () => {
+        if (isLoadingMore || !hasMore) return;
+        setIsLoadingMore(true);
+        try {
+            const res = await GetAllFeedPosts(skip, PAGE_SIZE);
+            const formatted = res.map(p => ({
+                ...p,
+                likes: p.likes || [],
+                comments: p.comments || [],
+                showComments: false
+            }));
+            setPosts(prev => [...prev, ...formatted]);
+            setSkip(prev => prev + PAGE_SIZE);
+            setHasMore(res.length === PAGE_SIZE);
+        } catch (error) {
+            alert(`Could not load more posts: ${error.message}`);
+        } finally {
+            setIsLoadingMore(false);
         }
-        catch (error) {
-            console.error("Error in adding comment", error);
+    };
+
+    // ── Comment handlers ───────────────────────────────────────────────────────
+    const handleAdd = async (index, post_id) => {
+        const commentText = (commentInputs[post_id] || "").trim();
+        if (!commentText) return;
+        try {
+            const addCommentRes = await AddComment({ content: commentText, post_id });
+            setPosts(post.map((p, i) =>
+                i === index ? { ...p, comments: [...p.comments, addCommentRes] } : p
+            ));
+            setCommentInputs(prev => ({ ...prev, [post_id]: "" }));
+        } catch (error) {
+            alert(`Could not post comment: ${error.message}`);
         }
-    }
+    };
 
     const handleShowComment = (index) => {
         setPosts(post.map((p, i) =>
-            i === index ? {
-                ...p,
-                showComments: !p.showComments
-            }
-                : p
-        ))
-    }
+            i === index ? { ...p, showComments: !p.showComments } : p
+        ));
+    };
 
     const handleLike = async (index, postId) => {
         try {
             const likeRes = await LikePost(postId);
             if (likeRes) {
                 setPosts(post.map((p, i) =>
-                    i === index ? {
-                        ...p,
-                        likes: [...p.likes, likeRes]
-                    }
-                    : p
+                    i === index ? { ...p, likes: [...p.likes, likeRes] } : p
                 ));
             }
         } catch (error) {
-            console.error("Error in liking post", error);
+            alert(`Could not like post: ${error.message}`);
         }
-    }
+    };
 
     const handleUnLike = async (index, postId) => {
         try {
             await UnlikePost(postId);
-            setPosts(post.map((p, i) => 
-                i === index ? { 
-                    ...p, 
-                    likes: p.likes.filter(l => l.user_id !== currentUserId) 
-                } 
-                : p
+            setPosts(post.map((p, i) =>
+                i === index ? { ...p, likes: p.likes.filter(l => l.user_id !== currentUserId) } : p
             ));
         } catch (error) {
-            console.error("Error in unliking post", error);
+            alert(`Could not unlike post: ${error.message}`);
         }
-    }
+    };
 
     const handleDel = async (postIndex, commentId) => {
         try {
             await DeleteComment(commentId);
             setPosts(post.map((p, i) =>
-                i === postIndex ? { ...p, comments: p.comments.filter(c => c.id !== commentId) }
-                : p
+                i === postIndex ? { ...p, comments: p.comments.filter(c => c.id !== commentId) } : p
             ));
         } catch (error) {
-            console.error("Error in deleting comment", error);
+            alert(`Could not delete comment: ${error.message}`);
         }
-    }
+    };
 
     const handleEditCommentSubmit = async (postIndex, commentId) => {
         if (!editCommentContent.trim()) return;
         try {
-            await UpdateComment({ id: commentId, content: editCommentContent });
-            setPosts(post.map((p, i) =>
-                i === postIndex ? {
-                    ...p,
-                    comments: p.comments.map(c => c.id === commentId ? { ...c, content: editCommentContent } : c)
-                } : p
-            ));
+            const updated = await UpdateComment({ id: commentId, content: editCommentContent });
+            if (updated) {
+                setPosts(post.map((p, i) =>
+                    i === postIndex ? {
+                        ...p,
+                        comments: p.comments.map(c => c.id === commentId ? { ...c, content: editCommentContent } : c)
+                    } : p
+                ));
+            }
             setEditCommentId(null);
         } catch (error) {
-            console.error("Error in updating comment", error);
+            alert(`Could not update comment: ${error.message}`);
         }
-    }
+    };
 
+    // ── Render ─────────────────────────────────────────────────────────────────
     return (
         <>
             <div style={{ marginTop: "20px" }}></div>
-            {NoPost && (
+
+            {/* Distinct error state */}
+            {loadError && (
+                <div className="no-post">
+                    <h1 style={{ color: 'var(--destructive)' }}>{loadError}</h1>
+                </div>
+            )}
+
+            {/* Skeleton while initial load is in progress */}
+            {isLoading && (
+                <div className="skeleton-loader">
+                    {[1, 2, 3].map(n => (
+                        <div key={n} className="skeleton-card">
+                            <div className="skeleton-header">
+                                <div className="skeleton-title"></div>
+                                <div className="skeleton-meta"></div>
+                            </div>
+                            <div className="skeleton-body"></div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Empty state: loading done, no error, no posts */}
+            {!isLoading && !loadError && post.length === 0 && (
                 <div className="no-post">
                     <h1>No Posts in Feed Yet</h1>
                 </div>
             )}
 
-            <div className="post">
-                {post.map((p, index) => (
-                    <div key={index} className="post-container">
-                        <div className="post-header">
-                            <div>
-                                <h1>{p.title}</h1>
-                                <div className="post-meta">
-                                    <div className="avatar-circle">{p.user && p.user.name ? p.user.name[0] : "U"}</div>
-                                    <small>Posted by: {p.user ? p.user.name : "Unknown"}</small>
+            {post.length > 0 && (
+                <div className="post">
+                    {post.map((p, index) => (
+                        <div key={p.id} className="post-container" style={{ animationDelay: `${index * 0.1}s` }}>
+                            <div className="post-header">
+                                <div>
+                                    <h1>{p.title}</h1>
+                                    <div className="post-meta">
+                                        <div className="avatar-circle">{p.user && p.user.name ? [...p.user.name][0] : "U"}</div>
+                                        <small>Posted by: {p.user ? p.user.name : "Unknown"}</small>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <p>{p.content}</p>
-                        
-                        <div className="like-container">
-                            {p.likes.some(l => l.user_id === currentUserId) ? (
-                                <AiFillLike size={24} onClick={() => handleUnLike(index, p.id)} />
-                            ) : (
-                                <AiOutlineLike size={24} onClick={() => handleLike(index, p.id)} />
-                            )}
-                            <p>{p.likes.length}</p>
-                        </div>
-                        <div className="post-buttons">
+                            <p>{p.content}</p>
 
-                            <button className="toggle-comments-btn" onClick={() => handleShowComment(index)}>
-                                <FiMessageCircle /> {p.showComments ? "Hide Comments" : "Show Comments"}
-                            </button>
-                            <button className={shareIndex === index ? "cancel-share-btn" : "share-btn"} onClick={() => setShareIndex(shareIndex === index ? null : index)}>
-                                <FiShare /> Share
-                            </button>
+                            <div className="like-container">
+                                {p.likes.some(l => l.user_id === currentUserId) ? (
+                                    <AiFillLike size={24} onClick={() => handleUnLike(index, p.id)} />
+                                ) : (
+                                    <AiOutlineLike size={24} onClick={() => handleLike(index, p.id)} />
+                                )}
+                                <p>{p.likes.length}</p>
+                            </div>
 
-                            {shareIndex === index && (
-                                <div className="share-container-parent">
-                                    <h1>Friends List</h1>
-                                    {friends.map((f, fIdx) => (
-                                        <div key={fIdx} className="share-container">
-                                            <p>{f.name}</p>
-                                            <button onClick={() => {
-                                                alert(`Post shared with ${f.name}!`);
-                                                setShareIndex(null);
-                                            }}>send</button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                            <div className="post-buttons">
+                                <button className="toggle-comments-btn" onClick={() => handleShowComment(index)}>
+                                    <FiMessageCircle /> {p.showComments ? "Hide Comments" : "Show Comments"}
+                                </button>
+                                <button
+                                    className={shareIndex === index ? "cancel-share-btn" : "share-btn"}
+                                    onClick={() => setShareIndex(shareIndex === index ? null : index)}
+                                >
+                                    <FiShare /> Share
+                                </button>
 
-                        </div>
-                        {p.showComments && (
-                            <div className="comment-section">
-                                <div className="comment-input-group">
-                                    <input
-                                        type="text"
-                                        placeholder="Add a comment..."
-                                        name="addComments"
-                                        value={addComments}
-                                        onChange={(e) => setAddComments(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleAdd(index, p.id)}
-                                    />
-                                    <button className="add-comment-btn" onClick={() => handleAdd(index, p.id)}>Post</button>
-                                </div>
-                                <div className="comments-list">
-                                    {p.comments.map((c) => (
-                                        <div key={c.id} className="comment-wrapper">
-                                            {editCommentId === c.id ? (
-                                                <div style={{display: 'flex', gap: '10px', width: '100%'}}>
-                                                    <input 
-                                                        type="text" 
-                                                        value={editCommentContent} 
-                                                        onChange={(e) => setEditCommentContent(e.target.value)}
-                                                        style={{flex: 1}}
-                                                    />
-                                                    <button onClick={() => handleEditCommentSubmit(index, c.id)} style={{padding: '5px', fontSize: '12px'}}>Save</button>
-                                                    <button onClick={() => setEditCommentId(null)} style={{padding: '5px', fontSize: '12px', background: '#ccc'}}>Cancel</button>
-                                                </div>
-                                            ) : (
-                                                <>
-                                                <div className="comment">
-                                                    <div className="comment-header">
-                                                        <div className="avatar-circle">{c.user && c.user.name ? c.user.name[0] : "U"}</div>
-                                                        <strong>{c.user ? c.user.name : "Unknown"}</strong>
+                                {shareIndex === index && (
+                                    <div className="share-container-parent">
+                                        <h1>Friends List</h1>
+                                        {friends.length === 0 && (
+                                            <p style={{ padding: '8px 12px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>No friends yet.</p>
+                                        )}
+                                        {friends.map((f, fIdx) => (
+                                            <div key={fIdx} className="share-container">
+                                                <p>{f.name}</p>
+                                                <button onClick={() => { alert(`Post shared with ${f.name}!`); setShareIndex(null); }}>Send</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {p.showComments && (
+                                <div className="comment-section">
+                                    <div className="comment-input-group">
+                                        <input
+                                            type="text"
+                                            placeholder="Add a comment..."
+                                            value={commentInputs[p.id] || ""}
+                                            onChange={e => setCommentInputs(prev => ({ ...prev, [p.id]: e.target.value }))}
+                                            onKeyDown={e => e.key === 'Enter' && handleAdd(index, p.id)}
+                                        />
+                                        <button className="add-comment-btn" onClick={() => handleAdd(index, p.id)}>Post</button>
+                                    </div>
+                                    <div className="comments-list">
+                                        {p.comments.map(c => (
+                                            <div key={c.id} className="comment-wrapper">
+                                                {editCommentId === c.id ? (
+                                                    <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                                                        <input
+                                                            type="text"
+                                                            value={editCommentContent}
+                                                            onChange={e => setEditCommentContent(e.target.value)}
+                                                            style={{ flex: 1 }}
+                                                        />
+                                                        <button onClick={() => handleEditCommentSubmit(index, c.id)} style={{ padding: '5px', fontSize: '12px' }}>Save</button>
+                                                        <button onClick={() => setEditCommentId(null)} style={{ padding: '5px', fontSize: '12px', background: '#ccc' }}>Cancel</button>
                                                     </div>
-                                                    <div>{c.content}</div>
-                                                </div>
-                                                    {c.user && c.user.id === currentUserId && (
-                                                        <div style={{display: 'flex', gap: '12px', marginTop: '6px', paddingLeft: '4px'}}>
-                                                            <button onClick={() => { setEditCommentId(c.id); setEditCommentContent(c.content); }} style={{background: 'none', color: 'var(--text-muted)', border: 'none', padding: 0, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px'}}><FiEdit2 /> Edit</button>
-                                                            <button onClick={() => handleDel(index, c.id)} style={{background: 'none', color: 'var(--destructive)', border: 'none', padding: 0, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px'}}><FiTrash2 /> Delete</button>
+                                                ) : (
+                                                    <>
+                                                        <div className="comment">
+                                                            <div className="comment-header">
+                                                                <div className="avatar-circle">{c.user && c.user.name ? [...c.user.name][0] : "U"}</div>
+                                                                <strong>{c.user ? c.user.name : "Unknown"}</strong>
+                                                            </div>
+                                                            <div>{c.content}</div>
                                                         </div>
-                                                    )}
-                                                </>
-                                            )}
-                                        </div>
-                                    ))}
+                                                        {c.user && c.user.id === currentUserId && (
+                                                            <div style={{ display: 'flex', gap: '12px', marginTop: '6px', paddingLeft: '4px' }}>
+                                                                <button onClick={() => { setEditCommentId(c.id); setEditCommentContent(c.content); }} style={{ background: 'none', color: 'var(--text-muted)', border: 'none', padding: 0, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}><FiEdit2 /> Edit</button>
+                                                                <button onClick={() => handleDel(index, c.id)} style={{ background: 'none', color: 'var(--destructive)', border: 'none', padding: 0, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}><FiTrash2 /> Delete</button>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>
+                            )}
+                        </div>
+                    ))}
+
+                    {/* Load More button — only shown if there might be more posts */}
+                    {hasMore && (
+                        <button
+                            onClick={loadMore}
+                            disabled={isLoadingMore}
+                            style={{
+                                margin: '16px auto 40px',
+                                display: 'block',
+                                padding: '12px 32px',
+                                background: 'var(--secondary-bg)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 'var(--radius-md)',
+                                color: 'var(--text-main)',
+                                cursor: isLoadingMore ? 'wait' : 'pointer',
+                                fontFamily: 'inherit',
+                                fontWeight: 500,
+                            }}
+                        >
+                            {isLoadingMore ? "Loading…" : "Load More Posts"}
+                        </button>
+                    )}
+
+                    {!hasMore && post.length > 0 && (
+                        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px 0 40px', fontSize: '0.9rem' }}>
+                            You've reached the end of the feed.
+                        </p>
+                    )}
+                </div>
+            )}
         </>
-    )
+    );
 }

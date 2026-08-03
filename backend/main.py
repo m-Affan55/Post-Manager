@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from db import engine
 from models import Base
-from routers import post, user, comment, friends
+from routers import post, user, comment, friends, notifications
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -40,6 +40,7 @@ app.include_router(user.router)
 app.include_router(post.router)
 app.include_router(comment.router)
 app.include_router(friends.router)
+app.include_router(notifications.router)
 
 
 @app.get("/")

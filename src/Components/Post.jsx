@@ -5,7 +5,7 @@ import { AiFillLike, AiOutlineLike } from 'react-icons/ai'
 import { FiEdit2, FiTrash2, FiMessageCircle, FiShare } from 'react-icons/fi'
 import { IoMdArrowBack } from 'react-icons/io'
 import { useLocation } from 'react-router-dom'
-import { CreatePost, GetAllUserPosts, DeletePost, UpdatePost, LikePost, UnlikePost } from '../Services/post.js'
+import { CreatePost, GetAllUserPosts, DeletePost, UpdatePost, LikePost, UnlikePost, SharePost } from '../Services/post.js'
 import { AddComment, UpdateComment, DeleteComment } from '../Services/comments.js'
 import { getUserName } from '../Services/auth.js'
 
@@ -196,6 +196,16 @@ export default function Post() {
         }
     };
 
+    const handleShare = async (postId, friendId, friendName) => {
+        try {
+            await SharePost(postId, friendId);
+            alert(`Post shared with ${friendName}!`);
+            setShareIndex(null);
+        } catch (error) {
+            alert(`Could not share post: ${error.message}`);
+        }
+    };
+
     const handleEditClick = (p) => {
         setEditPostId(p.id);
         setEditPostData({ title: p.title, content: p.content });
@@ -357,7 +367,7 @@ export default function Post() {
                                         {friends.map(f => (
                                             <div className="share-container" key={f.id}>
                                                 <p>{f.name}</p>
-                                                <button onClick={() => { alert(`Post shared with ${f.name}!`); setShareIndex(null); }}>Send</button>
+                                                <button onClick={() => handleShare(p.id, f.id, f.name)}>Send</button>
                                             </div>
                                         ))}
                                     </div>

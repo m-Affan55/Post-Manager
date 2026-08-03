@@ -141,3 +141,38 @@ def unlike_post(
     db.delete(existing_like)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.post("/{post_id}/share/{friend_id}", response_model=models.Notification.__name__ if False else dict)
+def share_post(
+    post_id: int,
+    friend_id: int,
+    current_user: int = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Check if post exists
+    post = _get_post_or_404(post_id, db)
+    
+    # Check if they are friends (either requester or addressee)
+    friendship = db.query(models.Friendship).filter(
+        (
+            ((models.Friendship.user_id == current_user) & (models.Friendship.friend_id == friend_id)) |
+            ((models.Friendship.user_id == friend_id) & (models.Friendship.friend_id == current_user))
+        ),
+        models.Friendship.status == "accepted"
+    ).first()
+    
+    if not friendship:
+        raise HTTPException(status_code=403, detail="You can only share posts with your friends")
+        
+    # Create notification
+    notification = models.Notification(
+        user_id=friend_id,
+        sender_id=current_user,
+        post_id=post_id,
+        message=f"shared a post with you"
+    )
+    db.add(notification)
+    db.commit()
+    db.refresh(notification)
+    
+    return {"message": "Post shared successfully"}

@@ -50,3 +50,16 @@ class Friendship(Base):
     status = Column(String, default="pending")
     requester = relationship("User", foreign_keys=[user_id])
     addressee = relationship("User", foreign_keys=[friend_id])
+
+class Notification(Base):
+    __tablename__ = "notifications"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    sender_id = Column(Integer, ForeignKey("users.id"))
+    post_id = Column(Integer, ForeignKey("posts.id"))
+    is_read = Column(Integer, default=0) # 0 for False, 1 for True, SQLite doesn't have native boolean sometimes, but Integer is fine
+    message = Column(String) # optional, we can construct message on frontend, but good to have
+    
+    recipient = relationship("User", foreign_keys=[user_id])
+    sender = relationship("User", foreign_keys=[sender_id])
+    post = relationship("Post", foreign_keys=[post_id])

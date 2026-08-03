@@ -117,3 +117,19 @@ export async function UnlikePost(postId) {
         throw error;
     }
 }
+
+export async function SharePost(postId, friendId) {
+    try {
+        const response = await apiFetch(`${Base_url}/${postId}/share/${friendId}`, {
+            method: "POST",
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.detail || "Error in sharing post");
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("SharePost:", error);
+        throw error;
+    }
+}

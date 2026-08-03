@@ -122,3 +122,16 @@ class FriendRequestResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class NotificationResponse(BaseModel):
+    id: int
+    user_id: int
+    sender_id: int
+    post_id: int
+    is_read: int
+    message: str | None = None
+    sender: UserResponse
+    post: PostResponse
+
+    class Config:
+        from_attributes = True

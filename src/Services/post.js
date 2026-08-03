@@ -19,6 +19,22 @@ export async function GetAllUserPosts(skip = 0, limit = 20) {
     }
 }
 
+export async function GetPost(postId) {
+    try {
+        const response = await apiFetch(`${Base_url}/${postId}`, {
+            method: "GET",
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.detail || "Error while getting Post");
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("GetPost:", error);
+        throw error;
+    }
+}
+
 export async function GetAllFeedPosts(skip = 0, limit = 20) {
     try {
         const response = await apiFetch(`${Base_url}/feed?skip=${skip}&limit=${limit}`, {

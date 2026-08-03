@@ -38,7 +38,11 @@ export default function Navbar() {
                 setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: 1 } : n));
             }
             setShowNotifications(false);
-            navigate('/feed'); // Or somewhere else
+            if (notif.post_id) {
+                navigate(`/post/${notif.post_id}`);
+            } else {
+                navigate('/feed');
+            }
         } catch (error) {
             console.error("Failed to read notification", error);
         }

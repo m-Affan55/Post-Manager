@@ -1,8 +1,8 @@
 const API_URL = "http://localhost:8000"; // Assuming the backend is running on 8000
 
-export const GetNotifications = async () => {
+export const GetNotifications = async (skip = 0, limit = 20) => {
     const token = localStorage.getItem("token");
-    const response = await fetch(`${API_URL}/notifications/`, {
+    const response = await fetch(`${API_URL}/notifications/?skip=${skip}&limit=${limit}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",

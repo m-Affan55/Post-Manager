@@ -103,7 +103,16 @@ def get_post(
 ):
     existing_post = _get_post_or_404(post_id, db)
     if existing_post.user_id != current_user:
-        raise HTTPException(status_code=403, detail="Not authorised to view this post")
+        # Check if they are friends
+        friendship = db.query(models.Friendship).filter(
+            (
+                ((models.Friendship.user_id == current_user) & (models.Friendship.friend_id == existing_post.user_id)) |
+                ((models.Friendship.user_id == existing_post.user_id) & (models.Friendship.friend_id == current_user))
+            ),
+            models.Friendship.status == "accepted"
+        ).first()
+        if not friendship:
+            raise HTTPException(status_code=403, detail="Not authorised to view this post")
     return existing_post
 
 

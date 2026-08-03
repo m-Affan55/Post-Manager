@@ -8,16 +8,12 @@ import models
 router = APIRouter(prefix="/posts", tags=["Posts"])
 
 
-# ── Helper ────────────────────────────────────────────────────────────────────
 def _get_post_or_404(post_id: int, db: Session) -> models.Post:
-    """Fetch a post by ID alone. Raises 404 if not found at all."""
     post = db.query(models.Post).filter(models.Post.id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     return post
 
-
-# ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.get("/", response_model=list[PostResponse])
 def get_all_posts(

@@ -14,7 +14,6 @@ load_dotenv()
 
 Base.metadata.create_all(bind=engine)
 
-# ── Rate limiter setup ────────────────────────────────────────────────────────
 # get_remote_address extracts the client's IP from the request.
 # The limiter is used as a decorator on individual route functions.
 limiter = Limiter(key_func=get_remote_address)
@@ -25,7 +24,6 @@ app = FastAPI()
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# ── CORS ──────────────────────────────────────────────────────────────────────
 # Read comma-separated origins from .env — no localhost hardcoded in source.
 raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173")
 origins = [o.strip() for o in raw_origins.split(",") if o.strip()]

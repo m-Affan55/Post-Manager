@@ -1,14 +1,13 @@
 import { API_BASE_URL } from "../config.js";
-import { getAuthToken } from "./post.js";
+import { apiFetch } from "./apiFetch.js";
 
 const FRIENDS_URL = `${API_BASE_URL}/friends`;
 const USERS_URL = `${API_BASE_URL}/users`;
 
 export async function getAllFriends() {
     try {
-        const response = await fetch(`${FRIENDS_URL}/`, {
+        const response = await apiFetch(`${FRIENDS_URL}/`, {
             method: "GET",
-            headers: getAuthToken(),
         });
         if (!response.ok) throw new Error("Error in getting friends");
         return await response.json();
@@ -20,9 +19,8 @@ export async function getAllFriends() {
 
 export async function getAllRequests() {
     try {
-        const response = await fetch(`${FRIENDS_URL}/requests`, {
+        const response = await apiFetch(`${FRIENDS_URL}/requests`, {
             method: "GET",
-            headers: getAuthToken(),
         });
         if (!response.ok) throw new Error("Error in getting requests");
         return await response.json();
@@ -34,9 +32,8 @@ export async function getAllRequests() {
 
 export async function getSentRequests() {
     try {
-        const response = await fetch(`${FRIENDS_URL}/sent-requests`, {
+        const response = await apiFetch(`${FRIENDS_URL}/sent-requests`, {
             method: "GET",
-            headers: getAuthToken(),
         });
         if (!response.ok) throw new Error("Error in getting sent requests");
         return await response.json();
@@ -48,9 +45,8 @@ export async function getSentRequests() {
 
 export async function findPeople() {
     try {
-        const response = await fetch(`${USERS_URL}/`, {
+        const response = await apiFetch(`${USERS_URL}/`, {
             method: "GET",
-            headers: getAuthToken(),
         });
         if (!response.ok) throw new Error("Error in finding people");
         return await response.json();
@@ -62,9 +58,8 @@ export async function findPeople() {
 
 export async function sendRequest(user_id) {
     try {
-        const response = await fetch(`${FRIENDS_URL}/request/${user_id}`, {
+        const response = await apiFetch(`${FRIENDS_URL}/request/${user_id}`, {
             method: "POST",
-            headers: getAuthToken(),
         });
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
@@ -79,9 +74,8 @@ export async function sendRequest(user_id) {
 
 export async function acceptRequest(friendship_id) {
     try {
-        const response = await fetch(`${FRIENDS_URL}/${friendship_id}/accept`, {
+        const response = await apiFetch(`${FRIENDS_URL}/${friendship_id}/accept`, {
             method: "PUT",
-            headers: getAuthToken(),
         });
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
@@ -96,9 +90,8 @@ export async function acceptRequest(friendship_id) {
 
 export async function rejectRequest(friendship_id) {
     try {
-        const response = await fetch(`${FRIENDS_URL}/${friendship_id}/reject`, {
+        const response = await apiFetch(`${FRIENDS_URL}/${friendship_id}/reject`, {
             method: "DELETE",
-            headers: getAuthToken(),
         });
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));

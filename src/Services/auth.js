@@ -1,5 +1,5 @@
 import { API_BASE_URL } from "../config.js";
-import { getAuthToken } from "./post.js";
+import { apiFetch } from "./apiFetch.js";
 
 const Base_Url = `${API_BASE_URL}/users`;
 
@@ -43,9 +43,8 @@ export async function loginUser(email, password) {
 
 export async function getUserName() {
     try {
-        const response = await fetch(`${Base_Url}/me`, {
+        const response = await apiFetch(`${Base_Url}/me`, {
             method: "GET",
-            headers: getAuthToken(),
         });
         if (!response.ok) {
             throw new Error("Could not fetch current user");

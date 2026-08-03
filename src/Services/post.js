@@ -1,21 +1,12 @@
 import { API_BASE_URL } from "../config.js";
-
-// One place to build auth headers — imported by other services too.
-export const getAuthToken = () => {
-    const token = localStorage.getItem("token");
-    return {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-    };
-};
+import { apiFetch } from "./apiFetch.js";
 
 export const Base_url = `${API_BASE_URL}/posts`;
 
 export async function GetAllUserPosts(skip = 0, limit = 20) {
     try {
-        const response = await fetch(`${Base_url}?skip=${skip}&limit=${limit}`, {
+        const response = await apiFetch(`${Base_url}?skip=${skip}&limit=${limit}`, {
             method: "GET",
-            headers: getAuthToken(),
         });
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
@@ -30,9 +21,8 @@ export async function GetAllUserPosts(skip = 0, limit = 20) {
 
 export async function GetAllFeedPosts(skip = 0, limit = 20) {
     try {
-        const response = await fetch(`${Base_url}/feed?skip=${skip}&limit=${limit}`, {
+        const response = await apiFetch(`${Base_url}/feed?skip=${skip}&limit=${limit}`, {
             method: "GET",
-            headers: getAuthToken(),
         });
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
@@ -47,9 +37,8 @@ export async function GetAllFeedPosts(skip = 0, limit = 20) {
 
 export async function CreatePost(post) {
     try {
-        const response = await fetch(Base_url, {
+        const response = await apiFetch(Base_url, {
             method: "POST",
-            headers: getAuthToken(),
             body: JSON.stringify(post),
         });
         if (!response.ok) {
@@ -65,9 +54,8 @@ export async function CreatePost(post) {
 
 export async function UpdatePost(post) {
     try {
-        const response = await fetch(`${Base_url}/${post.id}`, {
+        const response = await apiFetch(`${Base_url}/${post.id}`, {
             method: "PUT",
-            headers: getAuthToken(),
             body: JSON.stringify({ title: post.title, content: post.content }),
         });
         if (!response.ok) {
@@ -83,9 +71,8 @@ export async function UpdatePost(post) {
 
 export async function DeletePost(postId) {
     try {
-        const response = await fetch(`${Base_url}/${postId}`, {
+        const response = await apiFetch(`${Base_url}/${postId}`, {
             method: "DELETE",
-            headers: getAuthToken(),
             // No body on DELETE — the ID is already in the URL
         });
         if (!response.ok) {
@@ -101,9 +88,8 @@ export async function DeletePost(postId) {
 
 export async function LikePost(postId) {
     try {
-        const response = await fetch(`${Base_url}/${postId}/like`, {
+        const response = await apiFetch(`${Base_url}/${postId}/like`, {
             method: "POST",
-            headers: getAuthToken(),
         });
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
@@ -118,9 +104,8 @@ export async function LikePost(postId) {
 
 export async function UnlikePost(postId) {
     try {
-        const response = await fetch(`${Base_url}/${postId}/like`, {
+        const response = await apiFetch(`${Base_url}/${postId}/like`, {
             method: "DELETE",
-            headers: getAuthToken(),
         });
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));

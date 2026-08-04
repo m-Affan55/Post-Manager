@@ -127,11 +127,11 @@ class NotificationResponse(BaseModel):
     id: int
     user_id: int
     sender_id: int
-    post_id: int
+    post_id: int | None = None
     is_read: int
     message: str | None = None
     sender: UserResponse
-    post: PostResponse
+    post: PostResponse | None = None
 
     class Config:
         from_attributes = True

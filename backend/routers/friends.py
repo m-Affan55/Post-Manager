@@ -29,6 +29,10 @@ def send_friend_request(user_id: int, current_user: int = Depends(get_current_us
         
     new_request = models.Friendship(user_id=current_user, friend_id=user_id, status="pending")
     db.add(new_request)
+    
+    notification = models.Notification(user_id=user_id, sender_id=current_user, message="sent you a friend request")
+    db.add(notification)
+    
     db.commit()
     db.refresh(new_request)
     return new_request

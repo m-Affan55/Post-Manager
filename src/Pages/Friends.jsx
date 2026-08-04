@@ -1,9 +1,11 @@
 import { FriendsContext } from "../Context/FriendsProvider.jsx";
 import { useContext, useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import "../Styles/Friends.css";
 import { findPeople, getAllFriends, getAllRequests, getSentRequests, sendRequest, acceptRequest, rejectRequest } from "../Services/Friends";
 
 function Friends() {
+    const location = useLocation();
     const { refreshFriends } = useContext(FriendsContext);
     const [searchFriend, setSearchFriend] = useState("");
     const [allUsers, setAllUsers] = useState([]);
@@ -14,7 +16,13 @@ function Friends() {
     const [sentRequests, setSentRequests] = useState({}); // Maps userId -> friendshipId
 
     const [SearchFriendsList, setSearchFriendsList] = useState([]);
-    const [toggleFriendSection, setToggleFriendSection] = useState('yourConnections');
+    const [toggleFriendSection, setToggleFriendSection] = useState(location.state?.tab || 'yourConnections');
+
+    useEffect(() => {
+        if (location.state?.tab) {
+            setToggleFriendSection(location.state.tab);
+        }
+    }, [location.state]);
 
     // Fetch initial data
     useEffect(() => {

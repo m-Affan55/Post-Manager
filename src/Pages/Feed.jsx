@@ -1,14 +1,18 @@
-import { useContext, useState, useEffect, useCallback } from "react"
+import { useContext, useState, useEffect, useCallback, useRef } from "react"
+import { useLocation } from "react-router-dom"
 import '../Styles/Post.css'
 import { FriendsContext } from "../Context/FriendsProvider.jsx"
 import { AiFillLike, AiOutlineLike } from 'react-icons/ai'
 import { FiEdit2, FiTrash2, FiMessageCircle, FiShare } from 'react-icons/fi'
-import { GetAllFeedPosts, LikePost, UnlikePost } from '../Services/post.js'
+import { GetAllFeedPosts, LikePost, UnlikePost, SharePost } from '../Services/post.js'
 import { AddComment, UpdateComment, DeleteComment } from '../Services/comments.js'
 
 const PAGE_SIZE = 20;
 
 export default function Feed() {
+    const location = useLocation();
+    const hasScrolledRef = useRef(false);
+
     // Per-post comment inputs: { [postId]: "draft text" }
     const [commentInputs, setCommentInputs] = useState({});
 
@@ -76,6 +80,22 @@ export default function Feed() {
             setIsLoadingMore(false);
         }
     };
+
+    // Auto-scroll to shared post
+    useEffect(() => {
+        if (!hasScrolledRef.current && location.state?.highlightPostId && post.length > 0) {
+            const element = document.getElementById(`post-${location.state.highlightPostId}`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element.style.transition = 'box-shadow 0.5s ease-in-out';
+                element.style.boxShadow = '0 0 15px 5px var(--primary)';
+                setTimeout(() => {
+                    element.style.boxShadow = 'none';
+                }, 2000);
+                hasScrolledRef.current = true;
+            }
+        }
+    }, [post, location.state]);
 
     // ── Comment handlers ───────────────────────────────────────────────────────
     const handleAdd = async (index, post_id) => {
@@ -151,6 +171,16 @@ export default function Feed() {
         }
     };
 
+    const handleSharePost = async (postId, friendId, friendName) => {
+        try {
+            await SharePost(postId, friendId);
+            alert(`Post shared with ${friendName}!`);
+            setShareIndex(null);
+        } catch (error) {
+            alert(`Could not share post: ${error.message}`);
+        }
+    };
+
     // ── Render ─────────────────────────────────────────────────────────────────
     return (
         <>
@@ -188,7 +218,7 @@ export default function Feed() {
             {post.length > 0 && (
                 <div className="post">
                     {post.map((p, index) => (
-                        <div key={p.id} className="post-container" style={{ animationDelay: `${index * 0.1}s` }}>
+                        <div key={p.id} id={`post-${p.id}`} className="post-container" style={{ animationDelay: `${index * 0.1}s` }}>
                             <div className="post-header">
                                 <div>
                                     <h1>{p.title}</h1>
@@ -229,7 +259,7 @@ export default function Feed() {
                                         {friends.map((f, fIdx) => (
                                             <div key={fIdx} className="share-container">
                                                 <p>{f.name}</p>
-                                                <button onClick={() => { alert(`Post shared with ${f.name}!`); setShareIndex(null); }}>Send</button>
+                                                <button onClick={() => handleSharePost(p.id, f.id, f.name)}>Send</button>
                                             </div>
                                         ))}
                                     </div>

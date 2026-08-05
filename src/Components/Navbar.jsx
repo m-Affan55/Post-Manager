@@ -39,7 +39,7 @@ export default function Navbar() {
             }
             setShowNotifications(false);
             if (notif.post_id) {
-                navigate(`/post/${notif.post_id}`);
+                navigate('/feed', { state: { highlightPostId: notif.post_id } });
             } else if (notif.message && notif.message.includes('friend request')) {
                 navigate('/friends', { state: { tab: 'requests' } });
             } else {

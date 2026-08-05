@@ -1,0 +1,38 @@
+services:
+  # 1. Our PostgreSQL Database Container
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123Abc
+      POSTGRES_DB: post_website_db
+    ports:
+      - "5432:5432" # Allows you to still connect from pgAdmin on your laptop!
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # This saves your data so it isn't lost when the container stops
+
+  # 2. Our FastAPI Backend Container
+  api:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:123Abc@db:5432/post_website_db
+
+  # 3. Our React Frontend Container
+  frontend:
+    build: .
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    # This mounts your local code into the container so changes reflect instantly!
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+volumes:
+  postgres_data:

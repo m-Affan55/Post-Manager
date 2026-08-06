@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import '../Styles/Navbar.css';
 import { FiBell, FiX } from 'react-icons/fi';
@@ -11,6 +11,19 @@ export default function Navbar() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [showNotifications, setShowNotifications] = useState(false);
+    // Ref for the notification container so we can detect outside clicks
+    const notifRef = useRef(null);
+
+    // Close notification dropdown when user clicks outside of it
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (notifRef.current && !notifRef.current.contains(e.target)) {
+                setShowNotifications(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     useEffect(() => {
         const fetchNotifications = async () => {
@@ -106,7 +119,7 @@ export default function Navbar() {
                 <Link to="/feed"    className={`nav-btn ${location.pathname === '/feed'    ? 'active' : ''}`} onClick={closeMenu}>Feed</Link>
                 <Link to="/friends" className={`nav-btn ${location.pathname === '/friends' ? 'active' : ''}`} onClick={closeMenu}>Friends</Link>
                 
-                <div className="notification-container">
+                <div className="notification-container" ref={notifRef}>
                     <button className="nav-btn bell-btn" onClick={() => setShowNotifications(!showNotifications)}>
                         <FiBell size={20} />
                         {notifications.filter(n => n.is_read === 0).length > 0 && (

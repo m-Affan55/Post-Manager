@@ -143,8 +143,27 @@
     }
 
     /* Fix the bell button alignment on mobile so it matches other links */
+    .notification-container {
+        width: 100%;
+    }
     .bell-btn {
         justify-content: flex-start;
+        width: 100%;
+    }
+
+    /* Make dropdown full width on mobile so it doesn't overflow right */
+    .notification-dropdown {
+        position: fixed;
+        top: 60px; /* Below navbar */
+        left: 0;
+        right: 0;
+        width: 100vw;
+        max-width: 100%;
+        margin-top: 0;
+        border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-left: none;
+        border-right: none;
     }
 }
 

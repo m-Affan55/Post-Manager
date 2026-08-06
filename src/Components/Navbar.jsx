@@ -35,8 +35,9 @@ export default function Navbar() {
         try {
             if (notif.is_read === 0) {
                 await ReadNotification(notif.id);
-                setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: 1 } : n));
             }
+            // Remove from local list so it disappears from the bell immediately
+            setNotifications(prev => prev.filter(n => n.id !== notif.id));
             setShowNotifications(false);
             if (notif.post_id) {
                 navigate('/feed', { state: { highlightPostId: notif.post_id } });

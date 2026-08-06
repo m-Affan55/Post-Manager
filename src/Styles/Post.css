@@ -293,6 +293,7 @@
     margin-top: 24px;
     border: 1px solid var(--border);
     animation: fadeIn 0.3s ease-in-out;
+    box-sizing: border-box;
 }
 
 @keyframes fadeIn {
@@ -309,6 +310,7 @@
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
     background-color: var(--bg-color);
+    box-sizing: border-box;
 }
 .add-container input:focus, .add-container textarea:focus {
     border-color: var(--primary);

@@ -18,65 +18,93 @@ function Friends() {
     const [SearchFriendsList, setSearchFriendsList] = useState([]);
     const [toggleFriendSection, setToggleFriendSection] = useState(location.state?.tab || 'yourConnections');
 
+    // FEAT-13: Loading and error states for initial data fetch
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState("");
+
+    const currentUserId = parseInt(localStorage.getItem("current_user_id") || "0");
+
     useEffect(() => {
         if (location.state?.tab) {
             setToggleFriendSection(location.state.tab);
         }
     }, [location.state]);
 
-    // Fetch initial data
+    // FEAT-1: Helper to get the OTHER person's name from a friendship record
+    function getFriendName(friendship) {
+        if (friendship.requester && friendship.requester.id === currentUserId) {
+            return friendship.addressee ? friendship.addressee.name : "Friend";
+        }
+        return friendship.requester ? friendship.requester.name : "Friend";
+    }
+
+    // FEAT-3: Helper to get the OTHER person's ID from a friendship record
+    function getFriendId(friendship) {
+        if (friendship.requester && friendship.requester.id === currentUserId) {
+            return friendship.addressee ? friendship.addressee.id : null;
+        }
+        return friendship.requester ? friendship.requester.id : null;
+    }
+
+    // FEAT-13: Fetch initial data with proper error handling
     useEffect(() => {
         const fetchInitialData = async () => {
-            const usersRes = await findPeople();
-            const friendsRes = await getAllFriends();
-            const reqsRes = await getAllRequests();
-            const sentReqsRes = await getSentRequests();
+            setIsLoading(true);
+            setLoadError("");
+            try {
+                const [usersRes, friendsRes, reqsRes, sentReqsRes] = await Promise.all([
+                    findPeople(),
+                    getAllFriends(),
+                    getAllRequests(),
+                    getSentRequests()
+                ]);
 
-            if (usersRes) setAllUsers(usersRes);
-            if (reqsRes) setLocalRequests(reqsRes);
-            if (sentReqsRes) {
-                const sentMap = {};
-                sentReqsRes.forEach(r => {
-                    sentMap[r.friend_id] = r.id;
-                });
-                setSentRequests(sentMap);
-            }
-            
-            if (friendsRes) {
-                // Determine friend details based on who is logged in
-                const formattedFriends = friendsRes.map(f => {
-                    const currentUserId = parseInt(localStorage.getItem("current_user_id") || "0"); 
-                    // Note: If we don't have currentUserId in localStorage, we rely on the logic:
-                    // Requests are only fetched where we are addressee. But getAllFriends doesn't guarantee position.
-                    // It's safer to check if requester or addressee matches the friends list in context.
-                    // For simplicity, we just use the API response.
-                    // But wait, the backend doesn't know who is current_user in the response body.
-                    // Let's just use the addressee if we are the requester, and vice versa.
-                    return f; 
-                });
-                setLocalFriends(friendsRes);
-                setSearchFriendsList(friendsRes);
+                if (usersRes) setAllUsers(usersRes);
+                if (reqsRes) setLocalRequests(reqsRes);
+                if (sentReqsRes) {
+                    const sentMap = {};
+                    sentReqsRes.forEach(r => {
+                        sentMap[r.friend_id] = r.id;
+                    });
+                    setSentRequests(sentMap);
+                }
+                
+                if (friendsRes) {
+                    setLocalFriends(friendsRes);
+                    setSearchFriendsList(friendsRes);
+                }
+            } catch (error) {
+                console.error("Failed to load friends data:", error);
+                setLoadError("Failed to load friends data. Please refresh the page.");
+            } finally {
+                setIsLoading(false);
             }
         };
         fetchInitialData();
     }, []);
 
-    // Filter connections
+    // FEAT-2: Filter connections using the correct friend name
     function SearchHandler(e) {
         const query = e.target.value;
         setSearchFriend(query);
         setSearchFriendsList(localFriends.filter((f) => {
-            const friendName = f.requester ? f.requester.name : (f.addressee ? f.addressee.name : "");
+            const friendName = getFriendName(f);
             return friendName.toLowerCase().includes(query.toLowerCase());
         }));
     }
 
+    // FEAT-12: Add confirmation before unfollowing
     async function handleRemove(id) {
-        await rejectRequest(id);
-        const newFriends = localFriends.filter((f) => f.id !== id);
-        setLocalFriends(newFriends);
-        setSearchFriendsList(newFriends);
-        await refreshFriends();
+        if (!window.confirm("Are you sure you want to unfriend this person?")) return;
+        try {
+            await rejectRequest(id);
+            const newFriends = localFriends.filter((f) => f.id !== id);
+            setLocalFriends(newFriends);
+            setSearchFriendsList(newFriends);
+            await refreshFriends();
+        } catch (error) {
+            alert(`Could not remove friend: ${error.message}`);
+        }
     }
 
     async function handleSendRequest(userId) {
@@ -87,7 +115,7 @@ function Friends() {
                 setSentRequests(prev => ({ ...prev, [userId]: response.id }));
             }
         } catch (error) {
-            console.error(error);
+            alert(`Could not send request: ${error.message}`);
         }
     }
 
@@ -101,7 +129,7 @@ function Friends() {
                 return newState;
             });
         } catch (error) {
-            console.error(error);
+            alert(`Could not cancel request: ${error.message}`);
         }
     }
 
@@ -122,13 +150,55 @@ function Friends() {
         }
     }
 
+    // FEAT-12: Add confirmation before rejecting
     async function handleReject(id) {
-        await rejectRequest(id);
-        setLocalRequests(localRequests.filter(r => r.id !== id));
+        if (!window.confirm("Are you sure you want to reject this friend request?")) return;
+        try {
+            await rejectRequest(id);
+            setLocalRequests(localRequests.filter(r => r.id !== id));
+        } catch (error) {
+            alert(`Could not reject request: ${error.message}`);
+        }
     }
 
-    // Filter Find People
-    const filteredUsers = allUsers.filter(u => u.name.toLowerCase().includes(searchFriend.toLowerCase()));
+    // FEAT-3: Filter Find People — exclude already-friended, pending requests, and sent requests
+    const friendIds = new Set(localFriends.map(f => getFriendId(f)).filter(Boolean));
+    const receivedRequestIds = new Set(localRequests.map(r => r.requester ? r.requester.id : null).filter(Boolean));
+    const sentRequestIds = new Set(Object.keys(sentRequests).map(Number));
+
+    const filteredUsers = allUsers.filter(u =>
+        !friendIds.has(u.id) &&
+        !receivedRequestIds.has(u.id) &&
+        !sentRequestIds.has(u.id) &&
+        u.name.toLowerCase().includes(searchFriend.toLowerCase())
+    );
+
+    // FEAT-13: Loading skeleton
+    if (isLoading) {
+        return (
+            <div className="friends-container">
+                <div className="friend-section">
+                    <button className="active">Your Connections</button>
+                    <button>Find People</button>
+                    <button>Requests</button>
+                </div>
+                <div style={{ width: "100%", textAlign: "center", padding: "40px 0", color: "var(--text-muted)" }}>
+                    Loading friends data…
+                </div>
+            </div>
+        );
+    }
+
+    // FEAT-13: Error state
+    if (loadError) {
+        return (
+            <div className="friends-container">
+                <div style={{ width: "100%", textAlign: "center", padding: "40px 0", color: "var(--destructive)" }}>
+                    <h2>{loadError}</h2>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="friends-container">
@@ -162,7 +232,7 @@ function Friends() {
                     {searchFriend && filteredUsers.map((u, idx) => {
                         const isRequested = !!sentRequests[u.id];
                         return (
-                            <div className="friend-item" key={idx} style={{ animationDelay: `${idx * 0.05}s` }}>
+                            <div className="friend-item" key={u.id} style={{ animationDelay: `${idx * 0.05}s` }}>
                                 <p>{u.name}</p>
                                 {isRequested ? (
                                     <button className="remove-btn" onClick={() => handleCancelRequest(u.id, sentRequests[u.id])} style={{ backgroundColor: "#9ca3af" }}>Requested</button>
@@ -179,12 +249,15 @@ function Friends() {
                 <div style={{width: "100%"}}>
                     <input type="text" placeholder="Search Friends" value={searchFriend} onChange={SearchHandler} />
                     <h1>All Friends</h1>
+                    {localFriends.length === 0 && !searchFriend && (
+                        <p style={{textAlign: "center", marginTop: "20px", color: "var(--text-muted)"}}>No friends yet. Go to "Find People" to add some!</p>
+                    )}
                     {searchFriend && SearchFriendsList.length === 0 && (
                         <p style={{textAlign: "center", marginTop: "20px", color: "var(--text-muted)"}}>No friend found.</p>
                     )}
                     {SearchFriendsList.map((f, idx) => {
-                        // Display the name of the OTHER person in the friendship
-                        const friendName = f.requester ? f.requester.name : (f.addressee ? f.addressee.name : "Friend");
+                        // FEAT-1: Display the name of the OTHER person in the friendship
+                        const friendName = getFriendName(f);
                         return (
                             <div className="friend-item" key={f.id || idx} style={{ animationDelay: `${idx * 0.05}s` }}>
                                 <p>{friendName}</p>
@@ -197,6 +270,9 @@ function Friends() {
 
             {toggleFriendSection === 'requests' && (
                 <div style={{width: "100%"}}>
+                    {localRequests.length === 0 && (
+                        <p style={{textAlign: "center", marginTop: "20px", color: "var(--text-muted)"}}>No pending friend requests.</p>
+                    )}
                     {localRequests.map((r, idx) => (
                         <div className="friend-item" key={r.id || idx} style={{ animationDelay: `${idx * 0.05}s` }}>
                             <p>{r.requester ? r.requester.name : "Someone"} sent you a friend request</p>

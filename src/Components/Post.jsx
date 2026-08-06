@@ -9,6 +9,8 @@ import { CreatePost, GetAllUserPosts, DeletePost, UpdatePost, LikePost, UnlikePo
 import { AddComment, UpdateComment, DeleteComment } from '../Services/comments.js'
 import { getUserName } from '../Services/auth.js'
 
+const PAGE_SIZE = 20;
+
 export default function Post() {
     const location = useLocation();
 
@@ -42,6 +44,11 @@ export default function Post() {
     const [post, setPosts] = useState([]);
     const [username, setusername] = useState("");
 
+    // FEAT-11: Pagination state
+    const [skip, setSkip] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+
     useEffect(() => {
         setIsAddActive(false);
     }, [location.key]);
@@ -63,7 +70,7 @@ export default function Post() {
             setIsLoading(true);
             setLoadError("");
             try {
-                const res = await GetAllUserPosts();
+                const res = await GetAllUserPosts(0, PAGE_SIZE);
                 const formattedPosts = res.map(p => ({
                     ...p,
                     likes: p.likes || [],
@@ -71,6 +78,8 @@ export default function Post() {
                     showComments: false
                 }));
                 setPosts(formattedPosts);
+                setSkip(PAGE_SIZE);
+                setHasMore(res.length === PAGE_SIZE);
             } catch (error) {
                 // Service re-throws now, so we catch it here and tell the user.
                 setLoadError("Failed to load your posts. Please refresh the page.");
@@ -80,6 +89,28 @@ export default function Post() {
         };
         getPosts();
     }, []);
+
+    // FEAT-11: Load more posts
+    const loadMore = async () => {
+        if (isLoadingMore || !hasMore) return;
+        setIsLoadingMore(true);
+        try {
+            const res = await GetAllUserPosts(skip, PAGE_SIZE);
+            const formatted = res.map(p => ({
+                ...p,
+                likes: p.likes || [],
+                comments: p.comments || [],
+                showComments: false
+            }));
+            setPosts(prev => [...prev, ...formatted]);
+            setSkip(prev => prev + PAGE_SIZE);
+            setHasMore(res.length === PAGE_SIZE);
+        } catch (error) {
+            alert(`Could not load more posts: ${error.message}`);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
 
     // ── Comment handlers ───────────────────────────────────────────────────────
     const handleAdd = async (index, post_id) => {
@@ -424,6 +455,34 @@ export default function Post() {
                             )}
                         </div>
                     ))}
+
+                    {/* FEAT-11: Load More button */}
+                    {hasMore && (
+                        <button
+                            onClick={loadMore}
+                            disabled={isLoadingMore}
+                            style={{
+                                margin: '16px auto 40px',
+                                display: 'block',
+                                padding: '12px 32px',
+                                background: 'var(--secondary-bg)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 'var(--radius-md)',
+                                color: 'var(--text-main)',
+                                cursor: isLoadingMore ? 'wait' : 'pointer',
+                                fontFamily: 'inherit',
+                                fontWeight: 500,
+                            }}
+                        >
+                            {isLoadingMore ? "Loading…" : "Load More Posts"}
+                        </button>
+                    )}
+
+                    {!hasMore && post.length > 0 && (
+                        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px 0 40px', fontSize: '0.9rem' }}>
+                            You've seen all your posts.
+                        </p>
+                    )}
                 </div>
             )}
         </>

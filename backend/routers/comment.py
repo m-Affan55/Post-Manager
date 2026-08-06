@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from dependencies import get_db
 from sqlalchemy.orm import Session
-from models import Comment,Post
+from models import Comment, Post, Notification
 from schemas import CommentCreate,CommentResponse,CommentUpdate
 from routers.auth import get_current_user
 router = APIRouter(prefix='/comments',tags=['comments'])
@@ -26,6 +26,17 @@ def add_comment(comment: CommentCreate,post_id: int , current_user: int = Depend
         raise HTTPException(status_code=404 , detail="Post not found")
     new_comment = Comment(content = comment.content , user_id = current_user, post_id=post.id)
     db.add(new_comment)
+    
+    # FEAT-7: Create notification for post owner (don't notify yourself)
+    if post.user_id != current_user:
+        notification = Notification(
+            user_id=post.user_id,
+            sender_id=current_user,
+            post_id=post_id,
+            message="commented on your post"
+        )
+        db.add(notification)
+    
     db.commit()
     db.refresh(new_comment)
     return new_comment

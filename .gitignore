@@ -25,3 +25,11 @@ dist-ssr
 
 # Temporary script files
 scratch/
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+
+# Docker Overrides
+docker-compose.override.yml

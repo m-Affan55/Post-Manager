@@ -1,0 +1,11 @@
+.git
+.env
+.env.*
+node_modules
+dist
+dist-ssr
+backend/venv
+backend/__pycache__
+backend/*.db
+backend/post.json
+backend/Post_test.json

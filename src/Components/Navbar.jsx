@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import '../Styles/Navbar.css';
-import { FiBell } from 'react-icons/fi';
-import { GetNotifications, ReadNotification, DeleteNotification } from '../Services/notifications.js';
+import { FiBell, FiX } from 'react-icons/fi';
+import { GetNotifications, ReadNotification, DeleteNotification, ReadAllNotifications } from '../Services/notifications.js';
 
 export default function Navbar() {
     const navigate = useNavigate();
@@ -47,6 +47,27 @@ export default function Navbar() {
             }
         } catch (error) {
             console.error("Failed to read notification", error);
+        }
+    };
+
+    // FEAT-6: Mark all notifications as read
+    const handleMarkAllRead = async () => {
+        try {
+            await ReadAllNotifications();
+            setNotifications(prev => prev.map(n => ({ ...n, is_read: 1 })));
+        } catch (error) {
+            console.error("Failed to mark all as read", error);
+        }
+    };
+
+    // FEAT-8: Delete a single notification
+    const handleDeleteNotification = async (e, notifId) => {
+        e.stopPropagation(); // Prevent triggering the read+navigate handler
+        try {
+            await DeleteNotification(notifId);
+            setNotifications(prev => prev.filter(n => n.id !== notifId));
+        } catch (error) {
+            console.error("Failed to delete notification", error);
         }
     };
     if (location.pathname === '/' || location.pathname === '/register') {
@@ -94,7 +115,22 @@ export default function Navbar() {
                     
                     {showNotifications && (
                         <div className="notification-dropdown">
-                            <h3>Notifications</h3>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <h3 style={{ margin: 0 }}>Notifications</h3>
+                                {/* FEAT-6: Mark All Read button */}
+                                {notifications.some(n => n.is_read === 0) && (
+                                    <button
+                                        onClick={handleMarkAllRead}
+                                        style={{
+                                            background: 'none', border: 'none', color: 'var(--primary)',
+                                            cursor: 'pointer', fontSize: '0.8rem', fontWeight: 500,
+                                            padding: '4px 8px', borderRadius: 'var(--radius-sm)',
+                                        }}
+                                    >
+                                        Mark All Read
+                                    </button>
+                                )}
+                            </div>
                             {notifications.length === 0 ? (
                                 <p className="no-notifications">No notifications</p>
                             ) : (
@@ -105,7 +141,19 @@ export default function Navbar() {
                                             className={`notification-item ${n.is_read === 0 ? 'unread' : 'read'}`}
                                             onClick={() => handleReadNotification(n)}
                                         >
-                                            <p><strong>{n.sender.name}</strong> {n.message}</p>
+                                            <p style={{ flex: 1, margin: 0 }}><strong>{n.sender.name}</strong> {n.message}</p>
+                                            {/* FEAT-8: Delete notification button */}
+                                            <button
+                                                onClick={(e) => handleDeleteNotification(e, n.id)}
+                                                title="Dismiss notification"
+                                                style={{
+                                                    background: 'none', border: 'none', cursor: 'pointer',
+                                                    color: 'var(--text-muted)', padding: '2px', marginLeft: '8px',
+                                                    display: 'flex', alignItems: 'center', flexShrink: 0,
+                                                }}
+                                            >
+                                                <FiX size={14} />
+                                            </button>
                                         </div>
                                     ))}
                                 </div>

@@ -1,0 +1,8 @@
+.env
+.env.*
+venv
+__pycache__
+*.db
+post.json
+Post_test.json
+test.py

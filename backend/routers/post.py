@@ -122,7 +122,7 @@ def like_post(
     current_user: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    _get_post_or_404(post_id, db)  # raises 404 if post doesn't exist
+    post = _get_post_or_404(post_id, db)  # raises 404 if post doesn't exist
     existing_like = db.query(models.Like).filter(
         models.Like.post_id == post_id, models.Like.user_id == current_user
     ).first()
@@ -131,9 +131,21 @@ def like_post(
 
     new_like = models.Like(user_id=current_user, post_id=post_id)
     db.add(new_like)
+    
+    # FEAT-7: Create notification for post owner (don't notify yourself)
+    if post.user_id != current_user:
+        notification = models.Notification(
+            user_id=post.user_id,
+            sender_id=current_user,
+            post_id=post_id,
+            message="liked your post"
+        )
+        db.add(notification)
+    
     db.commit()
     db.refresh(new_like)
     return new_like
+
 
 
 @router.delete("/{post_id}/like", status_code=status.HTTP_204_NO_CONTENT)

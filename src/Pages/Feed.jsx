@@ -4,7 +4,7 @@ import '../Styles/Post.css'
 import { FriendsContext } from "../Context/FriendsProvider.jsx"
 import { AiFillLike, AiOutlineLike } from 'react-icons/ai'
 import { FiEdit2, FiTrash2, FiMessageCircle, FiShare } from 'react-icons/fi'
-import { GetAllFeedPosts, LikePost, UnlikePost, SharePost } from '../Services/post.js'
+import { GetAllFeedPosts, LikePost, UnlikePost, SharePost, DeletePost, UpdatePost } from '../Services/post.js'
 import { AddComment, UpdateComment, DeleteComment } from '../Services/comments.js'
 
 const PAGE_SIZE = 20;
@@ -30,6 +30,11 @@ export default function Feed() {
 
     const [editCommentId, setEditCommentId] = useState(null);
     const [editCommentContent, setEditCommentContent] = useState("");
+
+    // FEAT-4: Post editing state for own posts in feed
+    const [editPostId, setEditPostId] = useState(null);
+    const [editPostData, setEditPostData] = useState({ title: "", content: "" });
+    const [editError, setEditError] = useState("");
 
     const currentUserId = parseInt(localStorage.getItem("current_user_id") || "0");
 
@@ -181,6 +186,48 @@ export default function Feed() {
         }
     };
 
+    // FEAT-4: Delete own post from feed
+    const handleDelPost = async (id) => {
+        if (!window.confirm("Delete this post? This cannot be undone.")) return;
+        try {
+            await DeletePost(id);
+            setPosts(post.filter(p => p.id !== id));
+            if (editPostId === id) setEditPostId(null);
+        } catch (error) {
+            alert(`Could not delete post: ${error.message}`);
+        }
+    };
+
+    // FEAT-4: Edit own post handlers
+    const handleEditClick = (p) => {
+        setEditPostId(p.id);
+        setEditPostData({ title: p.title, content: p.content });
+        setEditError("");
+    };
+
+    const handleEditChange = (e) => {
+        setEditPostData({ ...editPostData, [e.target.name]: e.target.value });
+    };
+
+    const handleSaveEdit = async (p) => {
+        if (!editPostData.title.trim() || !editPostData.content.trim()) {
+            setEditError("Title and content cannot be empty.");
+            return;
+        }
+        setEditError("");
+        try {
+            await UpdatePost({ id: p.id, title: editPostData.title, content: editPostData.content });
+            setPosts(post.map(postItem =>
+                postItem.id === p.id
+                    ? { ...postItem, title: editPostData.title, content: editPostData.content }
+                    : postItem
+            ));
+            setEditPostId(null);
+        } catch (error) {
+            setEditError(`Save failed: ${error.message}`);
+        }
+    };
+
     // ── Render ─────────────────────────────────────────────────────────────────
     return (
         <>
@@ -221,14 +268,46 @@ export default function Feed() {
                         <div key={p.id} id={`post-${p.id}`} className="post-container" style={{ animationDelay: `${index * 0.1}s` }}>
                             <div className="post-header">
                                 <div>
-                                    <h1>{p.title}</h1>
+                                    {/* FEAT-4: Inline edit title when editing own post */}
+                                    {editPostId === p.id ? (
+                                        <input type="text" name="title" value={editPostData.title} onChange={handleEditChange} className="edit-title-input" />
+                                    ) : (
+                                        <h1>{p.title}</h1>
+                                    )}
                                     <div className="post-meta">
                                         <div className="avatar-circle">{p.user && p.user.name ? [...p.user.name][0] : "U"}</div>
                                         <small>Posted by: {p.user ? p.user.name : "Unknown"}</small>
                                     </div>
                                 </div>
+                                {/* FEAT-4: Show Edit/Delete buttons only for own posts */}
+                                {p.user && p.user.id === currentUserId && (
+                                    <div className="post-header-buttons">
+                                        {editPostId === p.id ? (
+                                            <>
+                                                <button className="update-post-btn" onClick={() => handleSaveEdit(p)}>Save</button>
+                                                <button className="delete-post-btn" onClick={() => { setEditPostId(null); setEditError(""); }}>Cancel</button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <button className="update-post-btn" onClick={() => handleEditClick(p)}><FiEdit2 /> Update</button>
+                                                <button className="delete-post-btn" onClick={() => handleDelPost(p.id)}><FiTrash2 /> Delete</button>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
                             </div>
-                            <p>{p.content}</p>
+
+                            {/* FEAT-4: Inline edit error */}
+                            {editPostId === p.id && editError && (
+                                <p style={{ color: 'var(--destructive)', fontSize: '0.85rem', margin: '0 0 8px' }}>{editError}</p>
+                            )}
+
+                            {/* FEAT-4: Inline edit content or display */}
+                            {editPostId === p.id ? (
+                                <textarea name="content" value={editPostData.content} onChange={handleEditChange} className="edit-content-input" rows={4} />
+                            ) : (
+                                <p>{p.content}</p>
+                            )}
 
                             <div className="like-container">
                                 {p.likes.some(l => l.user_id === currentUserId) ? (

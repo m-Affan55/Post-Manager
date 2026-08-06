@@ -1,10 +1,10 @@
 import { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { GetPost, LikePost, UnlikePost } from '../Services/post.js';
-import { AddComment } from '../Services/comments.js';
+import { AddComment, UpdateComment, DeleteComment } from '../Services/comments.js';
 import { FriendsContext } from '../Context/FriendsProvider.jsx';
 import { AiFillLike, AiOutlineLike } from 'react-icons/ai';
-import { FiMessageCircle } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiMessageCircle } from 'react-icons/fi';
 import '../Styles/Post.css';
 
 export default function SinglePost() {
@@ -15,6 +15,10 @@ export default function SinglePost() {
     const [error, setError] = useState('');
     const [commentInput, setCommentInput] = useState('');
     const currentUserId = parseInt(localStorage.getItem('current_user_id') || '0');
+
+    // FEAT-5: Comment editing state
+    const [editCommentId, setEditCommentId] = useState(null);
+    const [editCommentContent, setEditCommentContent] = useState('');
 
     useEffect(() => {
         const fetchPost = async () => {
@@ -58,6 +62,35 @@ export default function SinglePost() {
             setCommentInput('');
         } catch (err) {
             alert(`Could not post comment: ${err.message}`);
+        }
+    };
+
+    // FEAT-5: Delete comment handler
+    const handleDeleteComment = async (commentId) => {
+        try {
+            await DeleteComment(commentId);
+            setPost({ ...post, comments: post.comments.filter(c => c.id !== commentId) });
+        } catch (err) {
+            alert(`Could not delete comment: ${err.message}`);
+        }
+    };
+
+    // FEAT-5: Edit comment submit handler
+    const handleEditCommentSubmit = async (commentId) => {
+        if (!editCommentContent.trim()) return;
+        try {
+            const updated = await UpdateComment({ id: commentId, content: editCommentContent });
+            if (updated) {
+                setPost({
+                    ...post,
+                    comments: post.comments.map(c =>
+                        c.id === commentId ? { ...c, content: editCommentContent } : c
+                    )
+                });
+            }
+            setEditCommentId(null);
+        } catch (err) {
+            alert(`Could not update comment: ${err.message}`);
         }
     };
 
@@ -115,13 +148,37 @@ export default function SinglePost() {
                         {post.comments.length === 0 && <p style={{ color: 'var(--text-muted)' }}>No comments yet.</p>}
                         {post.comments.map(c => (
                             <div key={c.id} className="comment-wrapper">
-                                <div className="comment">
-                                    <div className="comment-header">
-                                        <div className="avatar-circle">{c.user && c.user.name ? [...c.user.name][0] : "U"}</div>
-                                        <strong>{c.user ? c.user.name : "Unknown"}</strong>
+                                {/* FEAT-5: Inline comment editing */}
+                                {editCommentId === c.id ? (
+                                    <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                                        <input
+                                            type="text"
+                                            value={editCommentContent}
+                                            onChange={e => setEditCommentContent(e.target.value)}
+                                            onKeyDown={e => e.key === 'Enter' && handleEditCommentSubmit(c.id)}
+                                            style={{ flex: 1 }}
+                                        />
+                                        <button onClick={() => handleEditCommentSubmit(c.id)} style={{ padding: '5px', fontSize: '12px' }}>Save</button>
+                                        <button onClick={() => setEditCommentId(null)} style={{ padding: '5px', fontSize: '12px', background: '#ccc' }}>Cancel</button>
                                     </div>
-                                    <div>{c.content}</div>
-                                </div>
+                                ) : (
+                                    <>
+                                        <div className="comment">
+                                            <div className="comment-header">
+                                                <div className="avatar-circle">{c.user && c.user.name ? [...c.user.name][0] : "U"}</div>
+                                                <strong>{c.user ? c.user.name : "Unknown"}</strong>
+                                            </div>
+                                            <div>{c.content}</div>
+                                        </div>
+                                        {/* FEAT-5: Edit/Delete buttons for comment owner */}
+                                        {c.user && c.user.id === currentUserId && (
+                                            <div style={{ display: 'flex', gap: '12px', marginTop: '6px', paddingLeft: '4px' }}>
+                                                <button onClick={() => { setEditCommentId(c.id); setEditCommentContent(c.content); }} style={{ background: 'none', color: 'var(--text-muted)', border: 'none', padding: 0, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}><FiEdit2 /> Edit</button>
+                                                <button onClick={() => handleDeleteComment(c.id)} style={{ background: 'none', color: 'var(--destructive)', border: 'none', padding: 0, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}><FiTrash2 /> Delete</button>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
                             </div>
                         ))}
                     </div>

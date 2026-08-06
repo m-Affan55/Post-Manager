@@ -153,6 +153,15 @@
         padding: 12px 16px;
     }
 
+    /* Reposition badge next to the bell icon on mobile.
+       Without this, it drifts to the top-right of the full-width button
+       and overlaps the Friends row above. */
+    .notification-badge {
+        top: 8px;
+        left: 26px;
+        right: auto;
+    }
+
     /* Make dropdown full width on mobile so it doesn't overflow right */
     .notification-dropdown {
         position: fixed;

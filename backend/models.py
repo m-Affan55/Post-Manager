@@ -18,7 +18,7 @@ class User(Base):
 class Post(Base):
     __tablename__ = "posts"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
     title = Column(String , nullable=False)
     content = Column(String, nullable=False)
     user = relationship("User", back_populates="posts")
@@ -28,8 +28,8 @@ class Post(Base):
 class Comment(Base):
     __tablename__= "comments"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    post_id = Column(Integer, ForeignKey("posts.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    post_id = Column(Integer, ForeignKey("posts.id"), index=True)
     content = Column(String)
     post = relationship("Post", back_populates="comments")
     user = relationship("User", back_populates="comments")
@@ -37,16 +37,16 @@ class Comment(Base):
 class Like(Base):
     __tablename__ = "likes"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    post_id = Column(Integer, ForeignKey("posts.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    post_id = Column(Integer, ForeignKey("posts.id"), index=True)
     user = relationship("User", back_populates="likes")
     post = relationship("Post", back_populates="likes")
 
 class Friendship(Base):
     __tablename__ = "friendships"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    friend_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    friend_id = Column(Integer, ForeignKey("users.id"), index=True)
     status = Column(String, default="pending")
     requester = relationship("User", foreign_keys=[user_id])
     addressee = relationship("User", foreign_keys=[friend_id])
@@ -54,10 +54,10 @@ class Friendship(Base):
 class Notification(Base):
     __tablename__ = "notifications"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    sender_id = Column(Integer, ForeignKey("users.id"))
-    post_id = Column(Integer, ForeignKey("posts.id"))
-    is_read = Column(Integer, default=0) # 0 for False, 1 for True, SQLite doesn't have native boolean sometimes, but Integer is fine
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    sender_id = Column(Integer, ForeignKey("users.id"), index=True)
+    post_id = Column(Integer, ForeignKey("posts.id"), index=True)
+    is_read = Column(Integer, default=0, index=True) # 0 for False, 1 for True, SQLite doesn't have native boolean sometimes, but Integer is fine
     message = Column(String) # optional, we can construct message on frontend, but good to have
     
     recipient = relationship("User", foreign_keys=[user_id])

@@ -3,13 +3,22 @@ from dependencies import get_db
 from sqlalchemy.orm import Session
 from schemas import PostResponse, PostCreate
 from routers.auth import get_current_user
+from sqlalchemy.orm import joinedload
+from sqlalchemy import func
 import models
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
 
 
-def _get_post_or_404(post_id: int, db: Session) -> models.Post:
-    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+def _get_post_or_404(post_id: int, db: Session, eager_load: bool = False) -> models.Post:
+    query = db.query(models.Post).filter(models.Post.id == post_id)
+    if eager_load:
+        query = query.options(
+            joinedload(models.Post.likes),
+            joinedload(models.Post.comments),
+            joinedload(models.Post.user),
+        )
+    post = query.first()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     return post
@@ -25,6 +34,11 @@ def get_all_posts(
 ):
     posts = (
         db.query(models.Post)
+        .options(
+            joinedload(models.Post.likes),
+            joinedload(models.Post.comments),
+            joinedload(models.Post.user),
+        )
         .filter(models.Post.user_id == current_user)
         .offset(skip)
         .limit(limit)
@@ -40,10 +54,20 @@ def get_feed_posts(
     current_user: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # We still do the engagement sort, but only on the current PAGE of results.
-    # A proper solution would push this sort into SQL (future work).
-    posts = db.query(models.Post).offset(skip).limit(limit).all()
-    posts.sort(key=lambda p: len(p.likes) + len(p.comments), reverse=True)
+    posts = (
+        db.query(models.Post)
+        .options(
+            joinedload(models.Post.likes),
+            joinedload(models.Post.comments),
+            joinedload(models.Post.user),
+        )
+        .outerjoin(models.Like, models.Like.post_id == models.Post.id)
+        .group_by(models.Post.id)
+        .order_by(func.count(models.Like.id).desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
     return posts
 
 
@@ -101,7 +125,7 @@ def get_post(
     current_user: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    existing_post = _get_post_or_404(post_id, db)
+    existing_post = _get_post_or_404(post_id, db, eager_load=True)
     if existing_post.user_id != current_user:
         # Check if they are friends
         friendship = db.query(models.Friendship).filter(

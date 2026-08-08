@@ -123,6 +123,13 @@ class FriendRequestResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class PostMiniResponse(BaseModel):
+    id: int
+    title: str
+
+    class Config:
+        from_attributes = True
+
 class NotificationResponse(BaseModel):
     id: int
     user_id: int
@@ -131,7 +138,7 @@ class NotificationResponse(BaseModel):
     is_read: int
     message: str | None = None
     sender: UserResponse
-    post: PostResponse | None = None
+    post: PostMiniResponse | None = None
 
     class Config:
         from_attributes = True

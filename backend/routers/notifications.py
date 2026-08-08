@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from dependencies import get_db
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from schemas import NotificationResponse
 from routers.auth import get_current_user
 import models
@@ -16,6 +16,10 @@ def get_notifications(
 ):
     notifications = (
         db.query(models.Notification)
+        .options(
+            joinedload(models.Notification.sender),
+            joinedload(models.Notification.post)
+        )
         .filter(models.Notification.user_id == current_user)
         .order_by(models.Notification.id.desc())
         .offset(skip)

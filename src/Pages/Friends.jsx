@@ -3,6 +3,7 @@ import { useContext, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import "../Styles/Friends.css";
 import { findPeople, getAllFriends, getAllRequests, getSentRequests, sendRequest, acceptRequest, rejectRequest } from "../Services/Friends";
+import { toast } from 'react-hot-toast';
 
 function Friends() {
     const location = useLocation();
@@ -103,7 +104,7 @@ function Friends() {
             setSearchFriendsList(newFriends);
             await refreshFriends();
         } catch (error) {
-            alert(`Could not remove friend: ${error.message}`);
+            toast.error(`Could not remove friend: ${error.message}`);
         }
     }
 
@@ -115,7 +116,7 @@ function Friends() {
                 setSentRequests(prev => ({ ...prev, [userId]: response.id }));
             }
         } catch (error) {
-            alert(`Could not send request: ${error.message}`);
+            toast.error(`Could not send request: ${error.message}`);
         }
     }
 
@@ -129,7 +130,7 @@ function Friends() {
                 return newState;
             });
         } catch (error) {
-            alert(`Could not cancel request: ${error.message}`);
+            toast.error(`Could not cancel request: ${error.message}`);
         }
     }
 
@@ -146,7 +147,7 @@ function Friends() {
             }
             if (refreshFriends) await refreshFriends();
         } catch (error) {
-            alert(`Could not accept request: ${error.message}`);
+            toast.error(`Could not accept request: ${error.message}`);
         }
     }
 
@@ -157,7 +158,7 @@ function Friends() {
             await rejectRequest(id);
             setLocalRequests(localRequests.filter(r => r.id !== id));
         } catch (error) {
-            alert(`Could not reject request: ${error.message}`);
+            toast.error(`Could not reject request: ${error.message}`);
         }
     }
 

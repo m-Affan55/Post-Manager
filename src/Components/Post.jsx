@@ -8,6 +8,7 @@ import { useLocation } from 'react-router-dom'
 import { CreatePost, GetAllUserPosts, DeletePost, UpdatePost, LikePost, UnlikePost, SharePost } from '../Services/post.js'
 import { AddComment, UpdateComment, DeleteComment } from '../Services/comments.js'
 import { getUserName } from '../Services/auth.js'
+import { toast } from 'react-hot-toast'
 
 const PAGE_SIZE = 20;
 
@@ -106,7 +107,7 @@ export default function Post() {
             setSkip(prev => prev + PAGE_SIZE);
             setHasMore(res.length === PAGE_SIZE);
         } catch (error) {
-            alert(`Could not load more posts: ${error.message}`);
+            toast.error(`Could not load more posts: ${error.message}`);
         } finally {
             setIsLoadingMore(false);
         }
@@ -125,7 +126,7 @@ export default function Post() {
             // Clear only THIS post's input, not everyone else's
             setCommentInputs(prev => ({ ...prev, [post_id]: "" }));
         } catch (error) {
-            alert(`Could not post comment: ${error.message}`);
+            toast.error(`Could not post comment: ${error.message}`);
         }
     };
 
@@ -142,7 +143,7 @@ export default function Post() {
                 i === postIndex ? { ...p, comments: p.comments.filter(c => c.id !== commentId) } : p
             ));
         } catch (error) {
-            alert(`Could not delete comment: ${error.message}`);
+            toast.error(`Could not delete comment: ${error.message}`);
         }
     };
 
@@ -160,7 +161,7 @@ export default function Post() {
             }
             setEditCommentId(null);
         } catch (error) {
-            alert(`Could not update comment: ${error.message}`);
+            toast.error(`Could not update comment: ${error.message}`);
         }
     };
 
@@ -171,7 +172,7 @@ export default function Post() {
 
     const handleAddPost = async () => {
         if (!addPost.title.trim() || !addPost.content.trim()) {
-            alert("Please fill in both Title and Content.");
+            toast.error("Please fill in both Title and Content.");
             return;
         }
         // Prevent double-click: disable the button immediately
@@ -186,7 +187,7 @@ export default function Post() {
             }
         } catch (error) {
             // Form stays open with content intact so the user can retry
-            alert(`Could not create post: ${error.message}`);
+            toast.error(`Could not create post: ${error.message}`);
         } finally {
             setIsSubmitting(false); // re-enable the button
         }
@@ -201,7 +202,7 @@ export default function Post() {
                 ));
             }
         } catch (error) {
-            alert(`Could not like post: ${error.message}`);
+            toast.error(`Could not like post: ${error.message}`);
         }
     };
 
@@ -212,7 +213,7 @@ export default function Post() {
                 i === index ? { ...p, likes: p.likes.filter(l => l.user_id !== currentUserId) } : p
             ));
         } catch (error) {
-            alert(`Could not unlike post: ${error.message}`);
+            toast.error(`Could not unlike post: ${error.message}`);
         }
     };
 
@@ -223,17 +224,17 @@ export default function Post() {
             setPosts(post.filter(p => p.id !== id));
             if (editPostId === id) setEditPostId(null); // cancel edit if open
         } catch (error) {
-            alert(`Could not delete post: ${error.message}`);
+            toast.error(`Could not delete post: ${error.message}`);
         }
     };
 
     const handleShare = async (postId, friendId, friendName) => {
         try {
             await SharePost(postId, friendId);
-            alert(`Post shared with ${friendName}!`);
+            toast.success(`Post shared with ${friendName}!`);
             setShareIndex(null);
         } catch (error) {
-            alert(`Could not share post: ${error.message}`);
+            toast.error(`Could not share post: ${error.message}`);
         }
     };
 

@@ -24,7 +24,7 @@ export default function Login(){
                     localStorage.setItem("current_user_id", userData.id);
                 }
                 toast.success('Login successful!');
-                navigate("/feed");
+                window.location.href = "/feed";
             }
         }
         catch(error)

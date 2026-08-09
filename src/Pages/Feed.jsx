@@ -6,6 +6,7 @@ import { AiFillLike, AiOutlineLike } from 'react-icons/ai'
 import { FiEdit2, FiTrash2, FiMessageCircle, FiShare } from 'react-icons/fi'
 import { GetAllFeedPosts, LikePost, UnlikePost, SharePost, DeletePost, UpdatePost } from '../Services/post.js'
 import { AddComment, UpdateComment, DeleteComment } from '../Services/comments.js'
+import { toast } from 'react-hot-toast'
 
 const PAGE_SIZE = 20;
 
@@ -80,7 +81,7 @@ export default function Feed() {
             setSkip(prev => prev + PAGE_SIZE);
             setHasMore(res.length === PAGE_SIZE);
         } catch (error) {
-            alert(`Could not load more posts: ${error.message}`);
+            toast.error(`Could not load more posts: ${error.message}`);
         } finally {
             setIsLoadingMore(false);
         }
@@ -88,19 +89,25 @@ export default function Feed() {
 
     // Auto-scroll to shared post
     useEffect(() => {
-        if (!hasScrolledRef.current && location.state?.highlightPostId && post.length > 0) {
-            const element = document.getElementById(`post-${location.state.highlightPostId}`);
+        if (!hasScrolledRef.current && location.hash && post.length > 0) {
+            // Remove the # character to get the ID
+            const targetId = location.hash.substring(1);
+            const element = document.getElementById(targetId);
             if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                element.style.transition = 'box-shadow 0.5s ease-in-out';
-                element.style.boxShadow = '0 0 15px 5px var(--primary)';
+                // Add a small delay to ensure rendering is complete
                 setTimeout(() => {
-                    element.style.boxShadow = 'none';
-                }, 2000);
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    element.style.transition = 'box-shadow 0.5s ease-in-out';
+                    // Use a visible highlight color that matches the app theme
+                    element.style.boxShadow = '0 0 15px 5px var(--primary)';
+                    setTimeout(() => {
+                        element.style.boxShadow = 'none';
+                    }, 2000);
+                }, 100);
                 hasScrolledRef.current = true;
             }
         }
-    }, [post, location.state]);
+    }, [post, location.hash]);
 
     // ── Comment handlers ───────────────────────────────────────────────────────
     const handleAdd = async (index, post_id) => {
@@ -113,7 +120,7 @@ export default function Feed() {
             ));
             setCommentInputs(prev => ({ ...prev, [post_id]: "" }));
         } catch (error) {
-            alert(`Could not post comment: ${error.message}`);
+            toast.error(`Could not post comment: ${error.message}`);
         }
     };
 
@@ -132,7 +139,7 @@ export default function Feed() {
                 ));
             }
         } catch (error) {
-            alert(`Could not like post: ${error.message}`);
+            toast.error(`Could not like post: ${error.message}`);
         }
     };
 
@@ -143,7 +150,7 @@ export default function Feed() {
                 i === index ? { ...p, likes: p.likes.filter(l => l.user_id !== currentUserId) } : p
             ));
         } catch (error) {
-            alert(`Could not unlike post: ${error.message}`);
+            toast.error(`Could not unlike post: ${error.message}`);
         }
     };
 
@@ -154,7 +161,7 @@ export default function Feed() {
                 i === postIndex ? { ...p, comments: p.comments.filter(c => c.id !== commentId) } : p
             ));
         } catch (error) {
-            alert(`Could not delete comment: ${error.message}`);
+            toast.error(`Could not delete comment: ${error.message}`);
         }
     };
 
@@ -172,17 +179,17 @@ export default function Feed() {
             }
             setEditCommentId(null);
         } catch (error) {
-            alert(`Could not update comment: ${error.message}`);
+            toast.error(`Could not update comment: ${error.message}`);
         }
     };
 
     const handleSharePost = async (postId, friendId, friendName) => {
         try {
             await SharePost(postId, friendId);
-            alert(`Post shared with ${friendName}!`);
+            toast.success(`Post shared with ${friendName}!`);
             setShareIndex(null);
         } catch (error) {
-            alert(`Could not share post: ${error.message}`);
+            toast.error(`Could not share post: ${error.message}`);
         }
     };
 
@@ -194,7 +201,7 @@ export default function Feed() {
             setPosts(post.filter(p => p.id !== id));
             if (editPostId === id) setEditPostId(null);
         } catch (error) {
-            alert(`Could not delete post: ${error.message}`);
+            toast.error(`Could not delete post: ${error.message}`);
         }
     };
 

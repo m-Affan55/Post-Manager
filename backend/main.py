@@ -4,7 +4,8 @@ from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from db import engine
 from models import Base
-from routers import post, user, comment, friends, notifications
+from routers import post, user, comment, friends, notifications, chat
+from ws_manager import manager, ws_chat
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -27,6 +28,7 @@ app = FastAPI()
 async def startup():
     redis = aioredis.from_url(redis_url, encoding="utf8", decode_responses=True)
     FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
+    manager.set_redis(redis)  # Share redis client for PUBLISH calls only
 
 # Register the limiter and its error handler on the app
 app.state.limiter = limiter
@@ -49,6 +51,8 @@ app.include_router(post.router)
 app.include_router(comment.router)
 app.include_router(friends.router)
 app.include_router(notifications.router)
+app.include_router(chat.router)
+app.add_api_websocket_route("/ws/chat", ws_chat)
 
 
 @app.get("/")

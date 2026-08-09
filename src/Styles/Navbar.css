@@ -146,6 +146,8 @@
        .nav-btn.bell-btn raises specificity above the global .bell-btn rule. */
     .notification-container {
         width: 100%;
+        flex-direction: column;
+        gap: 4px;
     }
     .nav-btn.bell-btn {
         justify-content: flex-start;

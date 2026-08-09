@@ -17,6 +17,7 @@ A full-stack, containerized social media application featuring user authenticati
 - **Interactions:** Like and comment on posts.
 - **Friends System:** Send, accept, and reject friend requests. View your connections and share posts with them.
 - **Responsive Design:** Fully responsive UI that works seamlessly on desktop and mobile devices.
+- **websockets:** Used web-scokets for real time chatting between friends.
 
 ## Technology Stack
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from dependencies import get_db
 from sqlalchemy.orm import Session
 from schemas import UserCreate, UserResponse, UserLogin
@@ -57,6 +57,11 @@ def get_me(current_user: int = Depends(get_current_user), db: Session = Depends(
 
 
 @router.get("/", response_model=list[UserResponse])
-def get_all_users(current_user: int = Depends(get_current_user), db: Session = Depends(get_db)):
-    users = db.query(User).filter(User.id != current_user).all()
+def get_all_users(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    current_user: int = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    users = db.query(User).filter(User.id != current_user).offset(skip).limit(limit).all()
     return users

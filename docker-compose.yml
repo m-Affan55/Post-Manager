@@ -12,19 +12,36 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data # This saves your data so it isn't lost when the container stops
 
+  redis:
+    image: redis:7-alpine
+    restart: always
+
   # 2. Our FastAPI Backend Container
   api:
     build: ./backend
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
+    deploy:
+      replicas: 2
     depends_on:
       - db
+      - redis
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-post_website_db}
+      - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM:-HS256}
       - ACCESS_TOKEN_EXPIRE_HOURS=${ACCESS_TOKEN_EXPIRE_HOURS:-24}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173}
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - api
 
   # 3. Our React Frontend Container
   frontend:

@@ -1,21 +1,32 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status, BackgroundTasks
+from fastapi_cache.decorator import cache
+from fastapi_cache import FastAPICache
 from dependencies import get_db
 from sqlalchemy.orm import Session
 from schemas import PostResponse, PostCreate
 from routers.auth import get_current_user
+from sqlalchemy.orm import joinedload
+from sqlalchemy import func
 import models
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
 
 
-def _get_post_or_404(post_id: int, db: Session) -> models.Post:
-    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+def _get_post_or_404(post_id: int, db: Session, eager_load: bool = False) -> models.Post:
+    query = db.query(models.Post).filter(models.Post.id == post_id)
+    if eager_load:
+        query = query.options(
+            joinedload(models.Post.likes),
+            joinedload(models.Post.comments),
+            joinedload(models.Post.user),
+        )
+    post = query.first()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     return post
 
 
-@router.get("/", response_model=list[PostResponse])
+@router.get("", response_model=list[PostResponse])
 def get_all_posts(
     # skip/limit give us pagination: "skip the first N results, give me the next M"
     skip: int = Query(0, ge=0, description="Number of records to skip"),
@@ -25,6 +36,11 @@ def get_all_posts(
 ):
     posts = (
         db.query(models.Post)
+        .options(
+            joinedload(models.Post.likes),
+            joinedload(models.Post.comments),
+            joinedload(models.Post.user),
+        )
         .filter(models.Post.user_id == current_user)
         .offset(skip)
         .limit(limit)
@@ -34,22 +50,34 @@ def get_all_posts(
 
 
 @router.get("/feed", response_model=list[PostResponse])
+@cache(namespace="feed")
 def get_feed_posts(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     current_user: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # We still do the engagement sort, but only on the current PAGE of results.
-    # A proper solution would push this sort into SQL (future work).
-    posts = db.query(models.Post).offset(skip).limit(limit).all()
-    posts.sort(key=lambda p: len(p.likes) + len(p.comments), reverse=True)
+    posts = (
+        db.query(models.Post)
+        .options(
+            joinedload(models.Post.likes),
+            joinedload(models.Post.comments),
+            joinedload(models.Post.user),
+        )
+        .outerjoin(models.Like, models.Like.post_id == models.Post.id)
+        .group_by(models.Post.id)
+        .order_by(func.count(models.Like.id).desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
     return posts
 
 
-@router.post("/", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
 def create_post(
     post: PostCreate,
+    background_tasks: BackgroundTasks,
     current_user: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -57,6 +85,7 @@ def create_post(
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
+    background_tasks.add_task(FastAPICache.clear, namespace="feed")
     return new_post
 
 
@@ -64,6 +93,7 @@ def create_post(
 def update_post(
     post_id: int,
     post: PostCreate,
+    background_tasks: BackgroundTasks,
     current_user: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -78,12 +108,14 @@ def update_post(
     existing_post.content = post.content
     db.commit()
     db.refresh(existing_post)
+    background_tasks.add_task(FastAPICache.clear, namespace="feed")
     return existing_post
 
 
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(
     post_id: int,
+    background_tasks: BackgroundTasks,
     current_user: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -92,6 +124,7 @@ def delete_post(
         raise HTTPException(status_code=403, detail="Not authorised to delete this post")
     db.delete(existing_post)
     db.commit()
+    background_tasks.add_task(FastAPICache.clear, namespace="feed")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -101,7 +134,7 @@ def get_post(
     current_user: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    existing_post = _get_post_or_404(post_id, db)
+    existing_post = _get_post_or_404(post_id, db, eager_load=True)
     if existing_post.user_id != current_user:
         # Check if they are friends
         friendship = db.query(models.Friendship).filter(
@@ -119,6 +152,7 @@ def get_post(
 @router.post("/{post_id}/like", status_code=status.HTTP_201_CREATED)
 def like_post(
     post_id: int,
+    background_tasks: BackgroundTasks,
     current_user: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -144,6 +178,7 @@ def like_post(
     
     db.commit()
     db.refresh(new_like)
+    background_tasks.add_task(FastAPICache.clear, namespace="feed")
     return new_like
 
 
@@ -151,6 +186,7 @@ def like_post(
 @router.delete("/{post_id}/like", status_code=status.HTTP_204_NO_CONTENT)
 def unlike_post(
     post_id: int,
+    background_tasks: BackgroundTasks,
     current_user: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -161,6 +197,7 @@ def unlike_post(
         raise HTTPException(status_code=404, detail="Like not found")
     db.delete(existing_like)
     db.commit()
+    background_tasks.add_task(FastAPICache.clear, namespace="feed")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @router.post("/{post_id}/share/{friend_id}", response_model=models.Notification.__name__ if False else dict)

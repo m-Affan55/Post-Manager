@@ -2,7 +2,8 @@ import {Link,useNavigate } from 'react-router-dom';
 import '../Styles/Auth.css';
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import {Signup} from '../Services/auth.js';
+import { Signup } from '../Services/auth.js';
+import toast from 'react-hot-toast';
 
 export default function SignUp(){
 
@@ -17,23 +18,23 @@ export default function SignUp(){
         e.preventDefault();
         if(userData.password !== userData.confirmPassword)
         {
-            return alert("Password and Confirm Password do not match");
+            return toast.error("Password and Confirm Password do not match");
         }
         if(userData.password.length < 8) {
-            return alert("Password must be at least 8 characters long");
+            return toast.error("Password must be at least 8 characters long");
         }
         if(!/[A-Z]/.test(userData.password) || !/[a-z]/.test(userData.password) || !/[0-9]/.test(userData.password)) {
-            return alert("Password must contain at least one uppercase letter, one lowercase letter, and one number");
+            return toast.error("Password must contain at least one uppercase letter, one lowercase letter, and one number");
         }
         try {
             const result = await Signup(userData.name, userData.email, userData.password);
             if (result) {
-                alert("Signup successful! Please log in.");
+                toast.success("Signup successful! Please log in.");
                 navigate('/'); // ← only navigate on success
             }
         } catch (error) {
             console.error("Error in signup", error);
-            alert(error.message);
+            toast.error(error.message);
             // navigate('/') is NOT called here — user stays on signup form to retry
         }
 

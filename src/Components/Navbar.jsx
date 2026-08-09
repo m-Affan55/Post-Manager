@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import '../Styles/Navbar.css';
-import { FiBell, FiX } from 'react-icons/fi';
+import { FiBell, FiX, FiMessageCircle } from 'react-icons/fi';
 import { GetNotifications, ReadNotification, DeleteNotification, ReadAllNotifications } from '../Services/notifications.js';
+import ChatDrawer from './ChatDrawer.jsx';
 
 export default function Navbar() {
     const navigate = useNavigate();
@@ -11,6 +12,8 @@ export default function Navbar() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [showNotifications, setShowNotifications] = useState(false);
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [chatUnreadCount, setChatUnreadCount] = useState(0);
     // Ref for the notification container so we can detect outside clicks
     const notifRef = useRef(null);
 
@@ -53,7 +56,7 @@ export default function Navbar() {
             setNotifications(prev => prev.filter(n => n.id !== notif.id));
             setShowNotifications(false);
             if (notif.post_id) {
-                navigate('/feed', { state: { highlightPostId: notif.post_id } });
+                navigate(`/feed#post-${notif.post_id}`);
             } else if (notif.message && notif.message.includes('friend request')) {
                 navigate('/friends', { state: { tab: 'requests' } });
             } else {
@@ -91,7 +94,7 @@ export default function Navbar() {
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('current_user_id');
-        navigate('/');
+        window.location.href = '/';
     };
 
     // Close the mobile menu whenever a nav link is clicked
@@ -119,7 +122,14 @@ export default function Navbar() {
                 <Link to="/feed"    className={`nav-btn ${location.pathname === '/feed'    ? 'active' : ''}`} onClick={closeMenu}>Feed</Link>
                 <Link to="/friends" className={`nav-btn ${location.pathname === '/friends' ? 'active' : ''}`} onClick={closeMenu}>Friends</Link>
                 
+                
                 <div className="notification-container" ref={notifRef}>
+                    <button className="nav-btn bell-btn" onClick={() => setIsChatOpen(true)}>
+                        <FiMessageCircle size={20} />
+                        {chatUnreadCount > 0 && (
+                            <span className="notification-badge">{chatUnreadCount}</span>
+                        )}
+                    </button>
                     <button className="nav-btn bell-btn" onClick={() => setShowNotifications(!showNotifications)}>
                         <FiBell size={20} />
                         {notifications.filter(n => n.is_read === 0).length > 0 && (
@@ -178,6 +188,12 @@ export default function Navbar() {
 
                 <button onClick={() => { handleLogout(); closeMenu(); }} className="nav-btn logout-btn">Logout</button>
             </div>
+            
+            <ChatDrawer 
+                isOpen={isChatOpen} 
+                onClose={() => setIsChatOpen(false)} 
+                onUnreadChange={setChatUnreadCount} 
+            />
         </nav>
     );
 }

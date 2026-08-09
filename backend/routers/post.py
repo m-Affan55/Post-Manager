@@ -200,37 +200,65 @@ def unlike_post(
     background_tasks.add_task(FastAPICache.clear, namespace="feed")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-@router.post("/{post_id}/share/{friend_id}", response_model=models.Notification.__name__ if False else dict)
-def share_post(
+@router.post("/{post_id}/share/{friend_id}", response_model=dict)
+async def share_post(
     post_id: int,
     friend_id: int,
     current_user: int = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # Check if post exists
-    post = _get_post_or_404(post_id, db)
-    
-    # Check if they are friends (either requester or addressee)
-    friendship = db.query(models.Friendship).filter(
-        (
-            ((models.Friendship.user_id == current_user) & (models.Friendship.friend_id == friend_id)) |
-            ((models.Friendship.user_id == friend_id) & (models.Friendship.friend_id == current_user))
-        ),
-        models.Friendship.status == "accepted"
-    ).first()
-    
-    if not friendship:
-        raise HTTPException(status_code=403, detail="You can only share posts with your friends")
+    from starlette.concurrency import run_in_threadpool
+    from ws_manager import manager
+    from schemas import MessageResponse
+
+    def _do_share():
+        # Check if post exists
+        post = _get_post_or_404(post_id, db)
         
-    # Create notification
-    notification = models.Notification(
-        user_id=friend_id,
-        sender_id=current_user,
-        post_id=post_id,
-        message=f"shared a post with you"
-    )
-    db.add(notification)
-    db.commit()
-    db.refresh(notification)
-    
+        # Check if they are friends (either requester or addressee)
+        friendship = db.query(models.Friendship).filter(
+            (
+                ((models.Friendship.user_id == current_user) & (models.Friendship.friend_id == friend_id)) |
+                ((models.Friendship.user_id == friend_id) & (models.Friendship.friend_id == current_user))
+            ),
+            models.Friendship.status == "accepted"
+        ).first()
+        
+        if not friendship:
+            raise HTTPException(status_code=403, detail="You can only share posts with your friends")
+            
+        # Create notification + chat message in one atomic commit
+        notification = models.Notification(
+            user_id=friend_id,
+            sender_id=current_user,
+            post_id=post_id,
+            message=f"shared a post with you"
+        )
+        db.add(notification)
+
+        convo_id = models.make_conversation_id(current_user, friend_id)
+        message = models.Message(
+            conversation_id=convo_id,
+            sender_id=current_user,
+            post_id=post_id,
+        )
+        db.add(message)
+        db.commit()  # Single atomic commit — both or neither
+
+        # Eager-load + serialize INSIDE threadpool — no lazy-loads on event loop
+        message = (
+            db.query(models.Message)
+            .options(
+                joinedload(models.Message.sender),
+                joinedload(models.Message.post),
+            )
+            .filter(models.Message.id == message.id)
+            .one()
+        )
+        return MessageResponse.model_validate(message).model_dump(mode="json")
+
+    msg_dict = await run_in_threadpool(_do_share)
+    # Publish to both channels for real-time delivery
+    await manager.publish(current_user, friend_id, msg_dict)
     return {"message": "Post shared successfully"}
+

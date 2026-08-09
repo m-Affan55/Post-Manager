@@ -6,7 +6,7 @@ import Navbar from './Components/Navbar.jsx';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import SignUp from './Pages/SignUp.jsx';
 import Feed from './Pages/Feed.jsx';
-import SinglePost from './Pages/SinglePost.jsx';
+
 import { useState, useEffect } from 'react';
 import { getUserName } from './Services/auth.js';
 import { Toaster } from 'react-hot-toast';
@@ -109,9 +109,7 @@ export default function App() {
                         <Route path='/friends' element={
                             <ProtectedRoute><Friends /></ProtectedRoute>
                         } />
-                        <Route path='/post/:id' element={
-                            <ProtectedRoute><SinglePost /></ProtectedRoute>
-                        } />
+
                     </Routes>
                 </FriendsProvider>
             </BrowserRouter>

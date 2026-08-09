@@ -1,4 +1,5 @@
-from pydantic import BaseModel, EmailStr, field_validator, Field
+from pydantic import BaseModel, EmailStr, field_validator, Field, ConfigDict
+from datetime import datetime
 import re
 
 
@@ -80,6 +81,8 @@ class UserResponse(BaseModel):
     name: str
     email: EmailStr
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class CommentResponse(BaseModel):
     id: int
@@ -87,8 +90,7 @@ class CommentResponse(BaseModel):
     post_id: int
     user: UserResponse
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LikeResponse(BaseModel):
@@ -96,8 +98,7 @@ class LikeResponse(BaseModel):
     user_id: int
     post_id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PostResponse(BaseModel):
@@ -108,8 +109,7 @@ class PostResponse(BaseModel):
     user: UserResponse
     comments: list[CommentResponse] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class FriendRequestResponse(BaseModel):
@@ -120,15 +120,13 @@ class FriendRequestResponse(BaseModel):
     requester: UserResponse
     addressee: UserResponse
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class PostMiniResponse(BaseModel):
     id: int
     title: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class NotificationResponse(BaseModel):
     id: int
@@ -140,5 +138,36 @@ class NotificationResponse(BaseModel):
     sender: UserResponse
     post: PostMiniResponse | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ── Chat schemas ──────────────────────────────────────────────────────────────
+class MessageCreate(BaseModel):
+    receiver_id: int
+    content: str = Field(min_length=1, max_length=5000)
+
+class ShareMessageCreate(BaseModel):
+    receiver_id: int
+    post_id: int
+
+class ReadUpdate(BaseModel):
+    message_id: int
+
+class MessageResponse(BaseModel):
+    id: int
+    conversation_id: str
+    sender_id: int
+    content: str | None = None
+    post_id: int | None = None
+    created_at: datetime
+    sender: UserResponse
+    post: PostMiniResponse | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+class ConversationPreview(BaseModel):
+    friend: UserResponse
+    last_message: MessageResponse | None = None
+    unread_count: int = 0
+
+    model_config = ConfigDict(from_attributes=True)

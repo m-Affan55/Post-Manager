@@ -115,7 +115,7 @@ export default function Navbar() {
 
             {/* Nav links — stacks vertically on mobile when menuOpen is true */}
             <div className={`navbar-links ${menuOpen ? 'open' : ''}`}>
-                <Link to="/home"    className={`nav-btn ${location.pathname === '/home'    ? 'active' : ''}`} onClick={closeMenu}>Home</Link>
+                <Link to="/profile" className={`nav-btn ${location.pathname === '/profile' ? 'active' : ''}`} onClick={closeMenu}>Profile</Link>
                 <Link to="/feed"    className={`nav-btn ${location.pathname === '/feed'    ? 'active' : ''}`} onClick={closeMenu}>Feed</Link>
                 <Link to="/friends" className={`nav-btn ${location.pathname === '/friends' ? 'active' : ''}`} onClick={closeMenu}>Friends</Link>
                 

@@ -9,6 +9,7 @@ import Feed from './Pages/Feed.jsx';
 import SinglePost from './Pages/SinglePost.jsx';
 import { useState, useEffect } from 'react';
 import { getUserName } from './Services/auth.js';
+import { Toaster } from 'react-hot-toast';
 
 /**
  * ProtectedRoute — the frontend version of "auth middleware".
@@ -77,7 +78,7 @@ function ProtectedRoute({ children }) {
 function PublicRoute({ children }) {
     const token = localStorage.getItem("token");
     if (token) {
-        return <Navigate to="/home" replace />;
+        return <Navigate to="/feed" replace />;
     }
     return children;
 }
@@ -85,6 +86,7 @@ function PublicRoute({ children }) {
 export default function App() {
     return (
         <>
+            <Toaster position="top-center" reverseOrder={false} />
             <BrowserRouter>
                 <FriendsProvider>
                     <Navbar />
@@ -98,7 +100,7 @@ export default function App() {
                         } />
 
                         {/* Protected routes — redirect to / if no token or invalid token */}
-                        <Route path='/home' element={
+                        <Route path='/profile' element={
                             <ProtectedRoute><Post /></ProtectedRoute>
                         } />
                         <Route path='/feed' element={

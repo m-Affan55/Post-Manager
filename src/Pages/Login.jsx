@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { loginUser, getUserName } from '../Services/auth.js';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function Login(){
     const navigate = useNavigate();
@@ -22,13 +23,14 @@ export default function Login(){
                 if (userData) {
                     localStorage.setItem("current_user_id", userData.id);
                 }
-                navigate("/home");
+                toast.success('Login successful!');
+                navigate("/feed");
             }
         }
         catch(error)
         {
             console.error("Error in Login",error);
-            alert(error.message);
+            toast.error(error.message);
         }
     }
     

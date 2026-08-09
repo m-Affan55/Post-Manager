@@ -4,8 +4,8 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
+    right: 0;
+    bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 1000; /* Ensure it's above everything else */
     display: flex;
@@ -16,7 +16,7 @@
 .chat-drawer {
     width: 400px;
     max-width: 100%; /* For smaller screens */
-    height: 100vh;
+    height: 100%;
     background-color: var(--card-bg, #ffffff);
     box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
     display: flex;
